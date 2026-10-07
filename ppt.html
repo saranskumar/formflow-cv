@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FormFlow - Idea Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #fff;
+      --fg: #111;
+      --muted: #666;
+      --line: #ddd;
+      --soft: #f5f5f5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .deck { position: relative; width: 100vw; height: 100vh; }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: clamp(2rem, 5vw, 4rem) clamp(2rem, 6vw, 5rem);
+      background: var(--bg);
+    }
+
+    .slide.active { display: flex; }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand { color: var(--fg); font-weight: 500; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      max-width: 14ch;
+    }
+
+    h2 {
+      font-size: clamp(1.4rem, 3vw, 2.1rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .tagline {
+      margin-top: 1rem;
+      font-size: clamp(1rem, 1.8vw, 1.2rem);
+      color: var(--muted);
+      max-width: 42ch;
+      line-height: 1.5;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: clamp(1.25rem, 3vh, 2rem);
+      max-width: 52ch;
+      line-height: 1.5;
+    }
+
+    .hero-block, .content, .closing {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .pill {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      padding: 0.4rem 0.7rem;
+      margin-bottom: 1.25rem;
+      width: fit-content;
+    }
+
+    .quote {
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+      line-height: 1.55;
+      max-width: 50ch;
+      border-left: 2px solid var(--fg);
+      padding-left: 1.1rem;
+    }
+
+    .quote-note {
+      margin-top: 1.25rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 48ch;
+      line-height: 1.5;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      padding: 1.1rem 1.15rem;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.45rem;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .card li::before {
+      content: "- ";
+      color: var(--fg);
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .mode-num {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .flow span {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      border: 1px solid var(--line);
+      padding: 0.4rem 0.65rem;
+    }
+
+    .flow .arrow {
+      border: none;
+      color: var(--muted);
+      padding: 0;
+      font-size: 0.9rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--soft);
+      font-weight: 500;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .diagram {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.62rem, 1.15vw, 0.78rem);
+      line-height: 1.45;
+      border: 1px solid var(--line);
+      padding: 1rem 1.15rem;
+      color: var(--fg);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .arch {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .arch-row {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .arch-row.shared { grid-template-columns: 1fr; }
+    .arch-row.split { grid-template-columns: 1fr 1fr; }
+    .arch-row.outputs { grid-template-columns: 1fr 1fr; }
+
+    .arch-box {
+      border: 1px solid var(--line);
+      padding: 0.7rem 0.85rem;
+      background: var(--bg);
+    }
+
+    .arch-box.soft { background: var(--soft); }
+
+    .arch-box.accent {
+      border-color: var(--fg);
+      background: var(--soft);
+    }
+
+    .arch-label {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .arch-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .arch-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .arch-chips span {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.68rem;
+      border: 1px solid var(--line);
+      padding: 0.22rem 0.45rem;
+      color: var(--fg);
+      background: var(--bg);
+    }
+
+    .arch-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .arch-list li {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.35;
+      padding-left: 0.85rem;
+      position: relative;
+    }
+
+    .arch-list li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--fg);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+    }
+
+    .arch-bridge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .arch-bridge::before,
+    .arch-bridge::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 2.2rem 1fr;
+      gap: 0.75rem;
+      align-items: start;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.65rem;
+    }
+
+    .step:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .step .n {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding-top: 0.15rem;
+    }
+
+    .step strong {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.15rem;
+    }
+
+    .step p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .principle {
+      font-size: clamp(1.3rem, 3vw, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    .title-facts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+      max-width: 36rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .title-facts p {
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .footer-nav {
+      position: fixed;
+      bottom: 1rem;
+      right: 1.25rem;
+      left: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .progress {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      pointer-events: auto;
+    }
+
+    .nav-btns {
+      display: flex;
+      gap: 0.35rem;
+      pointer-events: auto;
+    }
+
+    .nav-btns button {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--line);
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+    }
+
+    .nav-btns button:hover {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+
+    .hint {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-right: auto;
+      margin-left: 0.75rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-3, .title-facts,
+      .arch-row.split, .arch-row.outputs { grid-template-columns: 1fr; }
+      .hint { display: none; }
+    }
+
+    @media print {
+      @page { size: landscape; margin: 8mm; }
+
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .deck {
+        width: auto;
+        height: auto;
+        position: static;
+      }
+
+      .slide {
+        position: relative !important;
+        inset: auto !important;
+        display: flex !important;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        margin: 0;
+        padding: 6mm 8mm;
+        page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .slide:last-of-type {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .footer-nav { display: none !important; }
+      .diagram, .arch-box { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <!-- Title -->
+    <section class="slide active">
+      <div class="meta">
+        <span class="brand">FormFlow</span>
+        <span>Intro to Computer Vision / Idea Presentation</span>
+      </div>
+      <div class="hero-block">
+        <div class="pill">Intro to Computer Vision / Idea Presentation</div>
+        <h1>FormFlow</h1>
+        <p class="tagline">
+          A computer-vision system that turns hand-drawn sketches into approximate 3D prototypes, without CAD.
+        </p>
+        <div class="title-facts">
+          <div>
+            <div class="mode-num">COURSE</div>
+            <p>Introduction to Computer Vision</p>
+          </div>
+          <div>
+            <div class="mode-num">PRESENTED BY</div>
+            <p>Saran S Kumar / 453</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1 Problem -->
+    <section class="slide">
+      <div class="meta">
+        <span class="brand">FormFlow</span>
+        <span>01 / Problem</span>
+      </div>
+      <div class="content">
+        <h2>Problem</h2>
+        <p class="subtitle">What I am solving</p>
+        <p class="quote">
+          Develop a computer-vision-based system that captures freehand sketches through hand gestures and combines multiple 2D views (Front, Top, and Side) to reconstruct an approximate 3D representation without conventional CAD modelling.
+        </p>
+        <p class="quote-note">
+          Turning an idea into 3D usually needs CAD skills and conventional input devices. That friction slows rapid experimentation for beginners and non-experts.
+        </p>
+      </div>
+    </section>
+
+    <!-- 2 Solution -->
+    <section class="slide">
+      <div class="meta">
+        <span class="brand">FormFlow</span>
+        <span>02 / Solution</span>
+      </div>
+      <div class="content">
+        <h2>Solution</h2>
+        <p class="subtitle">Hands as a virtual pencil. Webcam as the canvas. Geometry as the engine. No custom AI/ML training.</p>
+        <div class="grid-2">
+          <div class="card">
+            <div class="mode-num">MODE 01</div>
+            <h3>Rapid 3D Prototyping</h3>
+            <p>Draw directly in 3D space. Index fingertip trajectory becomes a spatial sketch I can rotate, inspect, and export.</p>
+          </div>
+          <div class="card">
+            <div class="mode-num">MODE 02 / PRIMARY</div>
+            <h3>Multi-View 2D to 3D</h3>
+            <p>Draw Front, Top, and Side views. Extract contours, align dimensions, then build a 3D volume with <strong style="color: var(--fg);">Visual Hull</strong>.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3 Tech Stack -->
+    <section class="slide">
+      <div class="meta">
+        <span class="brand">FormFlow</span>
+        <span>03 / Tech Stack</span>
+      </div>
+      <div class="content">
+        <h2>Tech stack</h2>
+        <p class="subtitle">Desktop Python app. Standard webcam. No custom model training.</p>
+        <table>
+          <thead>
+            <tr><th>Component</th><th>Choice</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Language</td><td>Python</td></tr>
+            <tr><td>Computer Vision</td><td>OpenCV</td></tr>
+            <tr><td>Hand Tracking</td><td>MediaPipe Hands</td></tr>
+            <tr><td>3D Visualization</td><td>Open3D + OpenSCAD</td></tr>
+            <tr><td>Numerics / Geometry</td><td>NumPy + Visual Hull</td></tr>
+            <tr><td>Export</td><td>OBJ / STL / OpenSCAD (.scad)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4 Workflow -->
+    <section class="slide">
+      <div class="meta">
+        <span class="brand">FormFlow</span>
+        <span>04 / Workflow</span>
+      </div>
+      <div class="content">
+        <h2>Workflow</h2>
+        <p class="subtitle">End-to-end path from gesture to 3D model</p>
+        <div class="steps">
+          <div class="step">
+            <div class="n">01</div>
+            <div>
+              <strong>Capture</strong>
+              <p>Webcam detects the hand. Index fingertip acts as a virtual pencil. Pinch toggles drawing on/off.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="n">02</div>
+            <div>
+              <strong>Draw</strong>
+              <p>Mode 1: sketch freely in 3D. Mode 2: draw Front, Top, and Side orthographic views of the same object.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="n">03</div>
+            <div>
+              <strong>Process</strong>
+              <p>Smooth strokes, threshold, morphology, extract contours, align shared dimensions across views.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="n">04</div>
+            <div>
+              <strong>Reconstruct (Visual Hull)</strong>
+              <p>Back-project Front, Top, and Side silhouettes, intersect the volumes (Visual Hull), generate mesh, view and optionally re-edit.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="n">05</div>
+            <div>
+              <strong>Export</strong>
+              <p>Save the approximate prototype as OBJ, STL, or OpenSCAD (.scad).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5 System Architecture -->
+    <section class="slide">
+      <div class="meta">
+        <span class="brand">FormFlow</span>
+        <span>05 / System Architecture</span>
+      </div>
+      <div class="content">
+        <h2>System architecture</h2>
+        <p class="subtitle">Shared sensing layer, then two geometry paths. Mode 2 builds volume with Visual Hull.</p>
+        <div class="arch">
+          <div class="arch-row shared">
+            <div class="arch-box soft">
+              <div class="arch-label">Shared input</div>
+              <div class="arch-chips">
+                <span>Webcam</span>
+                <span>MediaPipe Hands</span>
+                <span>Virtual pencil</span>
+                <span>Stroke capture</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="arch-bridge">splits into two modes</div>
+
+          <div class="arch-row split">
+            <div class="arch-box">
+              <div class="arch-label">Mode 01</div>
+              <div class="arch-title">Rapid 3D Prototyping</div>
+              <ul class="arch-list">
+                <li>Map fingertip to 3D space</li>
+                <li>Smooth spatial trajectory</li>
+                <li>Open3D / OpenSCAD preview</li>
+              </ul>
+            </div>
+            <div class="arch-box accent">
+              <div class="arch-label">Mode 02 / Primary</div>
+              <div class="arch-title">Multi-View → Visual Hull</div>
+              <ul class="arch-list">
+                <li>Draw Front, Top, Side</li>
+                <li>Clean silhouettes + align</li>
+                <li>Intersect volumes (Visual Hull)</li>
+                <li>Generate approximate mesh</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-bridge">shared output</div>
+
+          <div class="arch-row outputs">
+            <div class="arch-box soft">
+              <div class="arch-label">Viewer</div>
+              <div class="arch-chips">
+                <span>Rotate</span>
+                <span>Zoom</span>
+                <span>Pan</span>
+                <span>Re-edit</span>
+              </div>
+            </div>
+            <div class="arch-box soft">
+              <div class="arch-label">Export</div>
+              <div class="arch-chips">
+                <span>OBJ</span>
+                <span>STL</span>
+                <span>OpenSCAD</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6 Expected Output -->
+    <section class="slide">
+      <div class="meta">
+        <span class="brand">FormFlow</span>
+        <span>06 / Expected Output</span>
+      </div>
+      <div class="content">
+        <h2>Expected output</h2>
+        <p class="subtitle">What the working system should produce</p>
+        <div class="grid-3">
+          <div class="card">
+            <h3>Interaction</h3>
+            <ul>
+              <li>Real-time hand tracking</li>
+              <li>Gesture-controlled drawing</li>
+              <li>Smoothed stroke capture</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>3D result</h3>
+            <ul>
+              <li>Spatial sketch (Mode 1)</li>
+              <li>Visual Hull mesh from 3 views (Mode 2)</li>
+              <li>Interactive rotate / zoom / pan</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Files</h3>
+            <ul>
+              <li>OBJ export</li>
+              <li>STL export</li>
+              <li>OpenSCAD (.scad)</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card" style="margin-top: 1rem;">
+          <p style="color: var(--muted); font-size: 0.9rem;">
+            Output is an <strong style="color: var(--fg);">approximate Visual Hull</strong> prototype for ideation, not manufacturing-grade CAD. Three imperfect views may omit concave or hidden features.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Closing -->
+    <section class="slide">
+      <div class="meta">
+        <span class="brand">FormFlow</span>
+        <span>Closing</span>
+      </div>
+      <div class="closing">
+        <div class="pill">Computer Vision</div>
+        <p class="quote" style="max-width: 46ch;">
+          FormFlow uses hand gestures as a virtual pencil, then reconstructs an approximate, interactive 3D prototype with image processing and Visual Hull (Front, Top, Side → volume).
+        </p>
+        <p class="principle">Draw it. Reconstruct it. Experience it.</p>
+        <p class="tagline" style="margin-top: 0.5rem;">Questions?</p>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="footer-nav">
+    <div class="progress" id="progress">1 / 8</div>
+    <span class="hint">Arrows or buttons / F fullscreen / P print</span>
+    <div class="nav-btns">
+      <button type="button" id="prev" aria-label="Previous slide">Prev</button>
+      <button type="button" id="next" aria-label="Next slide">Next</button>
+      <button type="button" id="print" aria-label="Print slides">Print</button>
+    </div>
+  </div>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const progress = document.getElementById("progress");
+    let i = 0;
+
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+      progress.textContent = `${i + 1} / ${slides.length}`;
+      history.replaceState(null, "", `#${i + 1}`);
+    }
+
+    document.getElementById("prev").addEventListener("click", () => show(i - 1));
+    document.getElementById("next").addEventListener("click", () => show(i + 1));
+    document.getElementById("print").addEventListener("click", () => window.print());
+
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) {
+        e.preventDefault();
+        show(i + 1);
+      } else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) {
+        e.preventDefault();
+        show(i - 1);
+      } else if (e.key === "Home") show(0);
+      else if (e.key === "End") show(slides.length - 1);
+      else if (e.key === "f" || e.key === "F") {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+      } else if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        window.print();
+      }
+    });
+
+    const hash = parseInt(location.hash.slice(1), 10);
+    show(Number.isFinite(hash) && hash >= 1 ? hash - 1 : 0);
+  </script>
+</body>
+</html>
