@@ -147,5 +147,9 @@ class Overlay:
         # ── hint (top-right) ────────────────────────────────────────────
         _put(frame, "Z=undo  C=clear  Esc=menu", (w - 260, h - 14), C_HINT, scale=0.4)
 
+    @property
+    def show_skeleton(self) -> bool:
+        return self._show_skeleton
+
     def toggle_skeleton(self) -> None:
         self._show_skeleton = not self._show_skeleton

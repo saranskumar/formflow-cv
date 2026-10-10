@@ -211,6 +211,9 @@ class MultiviewSession:
 
         return False
 
+    def update_silhouettes(self) -> None:
+        self._update_silhouettes()
+
     def _update_silhouettes(self) -> None:
         """Re-extract silhouette for all non-empty canvases."""
         for name, canvas in self.canvases.items():

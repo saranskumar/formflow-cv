@@ -37,7 +37,12 @@ def clean_specks(binary_img: np.ndarray, min_area: int = 15) -> np.ndarray:
 
 def find_open_endpoints(binary_img: np.ndarray) -> List[Tuple[int, int]]:
     """Estimate endpoints of open lines via hit-or-miss or neighbor counting."""
-    skeleton = cv2.ximgproc.thinning(binary_img) if hasattr(cv2, "ximgproc") else binary_img
+    if hasattr(cv2, "ximgproc"):
+        skeleton = cv2.ximgproc.thinning(binary_img)
+    else:
+        # opencv-python lacks ximgproc; fall back to scikit-image
+        from skimage.morphology import skeletonize
+        skeleton = skeletonize(binary_img > 0).astype(np.uint8) * 255
     # Simple endpoint detection: 8-neighbor count == 1
     kernel = np.array([[1, 1, 1], [1, 10, 1], [1, 1, 1]], dtype=np.uint8)
     filtered = cv2.filter2D((skeleton > 0).astype(np.uint8), -1, kernel)

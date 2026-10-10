@@ -73,11 +73,13 @@ class GestureDetector:
         self._dwell = cfg.gesture_dwell_seconds
         self._fist_start: Optional[float] = None
         self._palm_start: Optional[float] = None
+        self._fist_fired = False
 
     def update(self, lms: Optional[HandLandmarks]) -> GestureState:
         if lms is None:
             self._fist_start = None
             self._palm_start = None
+            self._fist_fired = False
             return GestureState.NONE
 
         # Measure finger curl: compare fingertip y to MCP y (image coords, y down)
@@ -96,9 +98,11 @@ class GestureDetector:
             if self._fist_start is None:
                 self._fist_start = now
             self._palm_start = None
-            if now - self._fist_start >= self._dwell:
+            if now - self._fist_start >= self._dwell and not self._fist_fired:
+                self._fist_fired = True  # fire once per fist hold
                 return GestureState.FIST
         elif n_curled == 0:  # open palm
+            self._fist_fired = False
             if self._palm_start is None:
                 self._palm_start = now
             self._fist_start = None
@@ -107,5 +111,6 @@ class GestureDetector:
         else:
             self._fist_start = None
             self._palm_start = None
+            self._fist_fired = False
 
         return GestureState.NONE

@@ -230,7 +230,7 @@ class App:
         self._rapid3d.draw_hud(frame)
 
         # Skeleton overlay
-        if lms is not None and self._overlay._show_skeleton:
+        if lms is not None and self._overlay.show_skeleton:
             self._tracker.draw_landmarks(frame, lms)
 
         cv2.imshow(WIN_NAME, frame)
@@ -279,7 +279,7 @@ class App:
         self._multiview.update_3d_view()
 
         # Draw skeleton on raw webcam frame for mini preview
-        if lms is not None and self._overlay._show_skeleton:
+        if lms is not None and self._overlay.show_skeleton:
             self._tracker.draw_landmarks(frame, lms)
 
         # Assemble composite UI
@@ -350,7 +350,7 @@ class App:
         if self._store:
             self._store.end_stroke()
             if self._state == AppState.MULTIVIEW and self._multiview:
-                self._multiview._update_silhouettes()
+                self._multiview.update_silhouettes()
 
 
 # ─── Entry point ──────────────────────────────────────────────────────────────
