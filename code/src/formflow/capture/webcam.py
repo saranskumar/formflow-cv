@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import queue
 import threading
+import time
 from typing import Optional
 
 import cv2
@@ -39,6 +40,7 @@ class WebcamCapture:
 
     # ------------------------------------------------------------------
     def start(self) -> bool:
+        self._queue = queue.Queue(maxsize=1)
         backend = _BACKEND_MAP.get(self._cfg.camera_backend, cv2.CAP_ANY)
         self._cap = cv2.VideoCapture(self._cfg.camera_index, backend)
         if not self._cap.isOpened():
@@ -48,6 +50,9 @@ class WebcamCapture:
             log.error("Camera not found (index=%d)", self._cfg.camera_index)
             return False
 
+        # MJPG + 1-frame buffer: uncompressed 720p over DirectShow is often limited to ~10 fps
+        self._cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
+        self._cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
         self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self._cfg.camera_width)
         self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self._cfg.camera_height)
 
@@ -71,6 +76,20 @@ class WebcamCapture:
             self._cap.release()
         log.info("Webcam stopped.")
 
+    def switch_next(self, max_index: int = 5) -> bool:
+        """Switch to the next camera that opens. Restores the old one on failure."""
+        old = self._cfg.camera_index
+        self.stop()
+        for step in range(1, max_index + 1):
+            self._cfg.camera_index = (old + step) % max_index
+            if self._cfg.camera_index == old:
+                break
+            if self.start():
+                return True
+        self._cfg.camera_index = old
+        self.start()
+        return False
+
     def read(self) -> Optional[np.ndarray]:
         """Return the latest frame or None."""
         try:
@@ -84,6 +103,7 @@ class WebcamCapture:
             ok, frame = self._cap.read()
             if not ok:
                 log.warning("Capture read failed.")
+                time.sleep(0.05)  # don't spin the CPU
                 continue
             if self._cfg.mirror:
                 frame = cv2.flip(frame, 1)

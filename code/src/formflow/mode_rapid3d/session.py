@@ -51,7 +51,7 @@ class Rapid3DSession:
         )
 
         # 3D Viewer
-        self.viewer = O3DViewer(window_name="FormFlow - Rapid 3D View")
+        self.viewer = O3DViewer(window_name="FormFlow - Rapid 3D View", width=480, height=360, visible=False)
         self.viewer_started = False
         self._last_stroke_count = -1
         self._last_active_len = -1
@@ -223,7 +223,7 @@ class Rapid3DSession:
 
         # Controls banner at bottom
         controls = "[ / ]: Depth plane  |  M: Depth Mode  |  F/T/S/I: Views  |  J/L: Orbit  |  E: Export OBJ  |  Esc: Menu"
-        cv2.putText(frame, controls, (20, h - 15), font, 0.42, (180, 180, 180), 1, cv2.LINE_AA)
+        cv2.putText(frame, controls, (130, h - 15), font, 0.42, (180, 180, 180), 1, cv2.LINE_AA)
 
         # Export notification flash
         if self._export_status_msg and (time.monotonic() - self._export_status_time < 3.5):

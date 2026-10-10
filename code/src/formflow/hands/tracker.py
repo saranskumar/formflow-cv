@@ -13,6 +13,7 @@ import numpy as np
 log = logging.getLogger(__name__)
 
 # MediaPipe landmark indices
+_DETECT_WIDTH = 640
 IDX_WRIST = 0
 IDX_INDEX_TIP = 8
 IDX_THUMB_TIP = 4
@@ -60,6 +61,7 @@ class HandTracker:
         mp_hands = mp.solutions.hands
         self._hands = mp_hands.Hands(
             static_image_mode=False,
+            model_complexity=0,  # lite model: much faster on CPU, fine for fingertip tracking
             max_num_hands=cfg.max_num_hands,
             min_detection_confidence=cfg.detection_confidence,
             min_tracking_confidence=cfg.tracking_confidence,
@@ -71,7 +73,13 @@ class HandTracker:
     def process(self, frame: np.ndarray) -> Optional[HandLandmarks]:
         """Return landmarks for the first detected hand, or None."""
         h, w = frame.shape[:2]
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        # Detect on a downscaled copy; landmarks are normalised so pixel coords use the full size
+        if w > _DETECT_WIDTH:
+            small = cv2.resize(frame, (_DETECT_WIDTH, int(h * _DETECT_WIDTH / w)), interpolation=cv2.INTER_AREA)
+        else:
+            small = frame
+        rgb = cv2.cvtColor(small, cv2.COLOR_BGR2RGB)
+        rgb.flags.writeable = False
         results = self._hands.process(rgb)
 
         if not results.multi_hand_landmarks:
@@ -96,13 +104,12 @@ class HandTracker:
         return HandLandmarks(norm=norm, pixel=pixel, handedness=handedness_label, hand_size=hand_size)
 
     def draw_landmarks(self, frame: np.ndarray, lms: HandLandmarks) -> None:
-        """Draw the MediaPipe skeleton directly onto frame (in-place)."""
-        # Reconstruct MediaPipe object for drawing
-        mp_lms = self._mp_hands.HandLandmarks()
-        for i in range(21):
-            lm = mp_lms.landmark.add()
-            lm.x, lm.y, lm.z = lms.norm[i]
-        self._mp_drawing.draw_landmarks(frame, mp_lms, self._mp_hands.HAND_CONNECTIONS)
+        """Draw the hand skeleton directly onto frame (in-place) with plain OpenCV calls."""
+        pts = lms.pixel.astype(np.int32)
+        for a, b in self._mp_hands.HAND_CONNECTIONS:
+            cv2.line(frame, tuple(pts[a]), tuple(pts[b]), (230, 230, 230), 2, cv2.LINE_AA)
+        for p in pts:
+            cv2.circle(frame, tuple(p), 3, (0, 0, 255), -1, cv2.LINE_AA)
 
     def release(self) -> None:
         self._hands.close()

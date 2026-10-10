@@ -44,7 +44,9 @@ class AppState(Enum):
 
 # ─── Menu renderer ────────────────────────────────────────────────────────────
 
-def _draw_menu(frame: np.ndarray, selected: int = -1) -> None:
+def _draw_menu(frame: np.ndarray, selected: int = -1) -> list:
+    """Draw the menu; return [(key_code, (x, y, w, h))] for clickable items."""
+    rects = []
     h, w = frame.shape[:2]
     # Dim background
     overlay = frame.copy()
@@ -65,6 +67,7 @@ def _draw_menu(frame: np.ndarray, selected: int = -1) -> None:
     ]
     for i, (key, label) in enumerate(items):
         y = h // 2 + 10 + i * 50
+        rects.append((ord(key.lower()), (w // 2 - 240, y - 30, 480, 40)))
         color = (0, 220, 255) if i == selected else (230, 230, 230)
         cv2.rectangle(frame, (w // 2 - 240, y - 30), (w // 2 + 240, y + 10), (35, 35, 45), -1)
         cv2.rectangle(frame, (w // 2 - 240, y - 30), (w // 2 + 240, y + 10), (60, 60, 75), 1)
@@ -74,6 +77,7 @@ def _draw_menu(frame: np.ndarray, selected: int = -1) -> None:
     cv2.putText(frame, "Press 1 or 2 to choose a mode. Esc/Q to quit.",
                 (w // 2 - 165, h - 35),
                 FONT, 0.45, (120, 120, 130), 1, cv2.LINE_AA)
+    return rects
 
 
 # ─── Main app loop ────────────────────────────────────────────────────────────
@@ -108,6 +112,20 @@ class App:
         self._cursor_px: Optional[Tuple[float, float]] = None
         self._pencil_pos: Optional[Tuple[float, ...]] = None
 
+        # On-screen camera switch button (x, y, w, h) in displayed-image coords
+        self._cam_btn: Tuple[int, int, int, int] = (0, 0, 0, 0)
+        self._btns: list = []           # [(key_code, (x, y, w, h))] clickable this frame
+        self._pending_key = -1          # key injected by a button click
+        self._key_queue: list = []      # keys waiting for the next camera frame
+        self._hover_xy = (-1, -1)
+        self._o3d_rect = (0, 0, 0, 0)   # embedded 3D panel (x, y, w, h)
+        self._o3d_viewer = None         # viewer whose panel is shown / dragged
+        self._drag_last = None
+        self._o3d_pic = None            # last captured 3D render
+        self._o3d_pic_t = 0.0
+        self._cam_msg_until = 0.0
+        self._cam_msg = ""
+
         # Keyboard pencil toggle
         self._kbd_pencil_override = False
 
@@ -125,14 +143,24 @@ class App:
         log.info("App started.")
         try:
             while self._state != AppState.EXIT:
+                # Poll keys every iteration; reading them only when a frame arrived dropped keypresses
+                key = cv2.waitKey(1) & 0xFF
+                if key == 255 and self._pending_key >= 0:
+                    key = self._pending_key
+                self._pending_key = -1
+                if key != 255:
+                    self._key_queue.append(key)
+
                 frame = self._cam.read()
                 if frame is None:
-                    cv2.waitKey(10)
                     continue
 
-                key = cv2.waitKey(1) & 0xFF
-                self._handle_global_keys(key)
-
+                key = self._key_queue.pop(0) if self._key_queue else 255
+                if key == 27:
+                    # Esc: leave the current mode, or quit from the menu. Consume it so the
+                    # menu handler doesn't see the same Esc and exit the app.
+                    self._handle_global_keys(key)
+                    key = 255
                 if self._state == AppState.MENU:
                     self._run_menu_frame(frame, key)
                 elif self._state == AppState.RAPID3D:
@@ -154,19 +182,99 @@ class App:
     # ── mouse dispatcher ──────────────────────────────────────────────────────
 
     def _mouse_dispatch(self, event: int, x: int, y: int, flags: int, param: any) -> None:
+        self._hover_xy = (x, y)
+        ox, oy, ow, oh = self._o3d_rect
+        in_panel = self._o3d_viewer is not None and ox <= x <= ox + ow and oy <= y <= oy + oh
+        if event == cv2.EVENT_LBUTTONDOWN and in_panel:
+            self._drag_last = (x, y)
+            return
+        if event == cv2.EVENT_MOUSEMOVE and self._drag_last is not None and (flags & cv2.EVENT_FLAG_LBUTTON):
+            self._o3d_viewer.orbit(float(x - self._drag_last[0]), float(y - self._drag_last[1]))
+            self._drag_last = (x, y)
+            return
+        if event == cv2.EVENT_LBUTTONUP:
+            self._drag_last = None
+        if event == cv2.EVENT_LBUTTONDOWN:
+            bx, by, bw, bh = self._cam_btn
+            if bx <= x <= bx + bw and by <= y <= by + bh:
+                self._switch_camera()
+                return
+            for code, (rx, ry, rw, rh) in self._btns:
+                if rx <= x <= rx + rw and ry <= y <= ry + rh:
+                    self._pending_key = code
+                    return
         if self._state == AppState.MULTIVIEW and self._multiview:
             self._multiview.handle_mouse(event, x, y, flags, param)
+
+    # ── camera switching ──────────────────────────────────────────────────────
+
+    def _switch_camera(self) -> None:
+        ok = self._cam.switch_next()
+        self._filter.reset()
+        idx = self._cfg.camera_index
+        self._cam_msg = f"Camera {idx}" if ok else f"No other camera (using {idx})"
+        self._cam_msg_until = time.monotonic() + 2.0
+        log.info("Camera switch -> index %d (%s)", idx, "ok" if ok else "no alternative")
+
+    def _draw_button_bar(self, img: np.ndarray, specs: list, y: int) -> None:
+        """Draw a row of clickable buttons: specs = [(label, key_code)]."""
+        h, w = img.shape[:2]
+        gap, bh = 6, 28
+        widths = [max(46, 14 + 9 * len(lbl)) for lbl, _ in specs]
+        x = max(8, (w - (sum(widths) + gap * (len(specs) - 1))) // 2)
+        hx, hy = self._hover_xy
+        for (lbl, code), bw in zip(specs, widths):
+            hot = x <= hx <= x + bw and y <= hy <= y + bh
+            cv2.rectangle(img, (x, y), (x + bw, y + bh), (70, 70, 90) if hot else (40, 40, 50), -1)
+            cv2.rectangle(img, (x, y), (x + bw, y + bh), (0, 220, 255) if hot else (90, 90, 105), 1)
+            cv2.putText(img, lbl, (x + 7, y + 19), FONT, 0.45, (235, 235, 235), 1, cv2.LINE_AA)
+            self._btns.append((code, (x, y, bw, bh)))
+            x += bw + gap
+
+    def _draw_3d_panel(self, img: np.ndarray, viewer, rect, label: str, placeholder: str) -> None:
+        """Embed the Open3D render into the main window at rect=(x, y, w, h)."""
+        x, y, w, h = rect
+        self._o3d_rect, self._o3d_viewer = rect, viewer
+        pic = None
+        if viewer is not None:
+            # Capturing the GL framebuffer is costly: refresh at ~15 fps, reuse the last image between
+            now = time.monotonic()
+            if self._o3d_pic is None or now - self._o3d_pic_t >= 1 / 15 or self._drag_last is not None:
+                self._o3d_pic, self._o3d_pic_t = viewer.render_image(), now
+            pic = self._o3d_pic
+        if pic is not None:
+            img[y:y + h, x:x + w] = cv2.resize(pic, (w, h), interpolation=cv2.INTER_AREA)
+        else:
+            cv2.rectangle(img, (x, y), (x + w, y + h), (22, 22, 28), -1)
+            cv2.putText(img, placeholder, (x + 10, y + h // 2), FONT, 0.45, (140, 140, 150), 1, cv2.LINE_AA)
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 220, 255), 1)
+        cv2.putText(img, f"{label} (drag to rotate)", (x + 6, y + 16), FONT, 0.42, (0, 220, 255), 1, cv2.LINE_AA)
+
+    def _draw_cam_button(self, img: np.ndarray) -> None:
+        h, w = img.shape[:2]
+        bw, bh = 170, 30
+        x, y = w - bw - 12, 10
+        self._cam_btn = (x, y, bw, bh)
+        cv2.rectangle(img, (x, y), (x + bw, y + bh), (40, 40, 50), -1)
+        cv2.rectangle(img, (x, y), (x + bw, y + bh), (0, 220, 255), 1)
+        cv2.putText(img, f"Camera {self._cfg.camera_index}  [N] switch", (x + 8, y + 20),
+                    FONT, 0.45, (230, 230, 230), 1, cv2.LINE_AA)
+        if time.monotonic() < self._cam_msg_until:
+            cv2.putText(img, self._cam_msg, (x, y + bh + 20), FONT, 0.5, (0, 220, 255), 1, cv2.LINE_AA)
 
     # ── frame handlers ────────────────────────────────────────────────────────
 
     def _run_menu_frame(self, frame: np.ndarray, key: int) -> None:
-        _draw_menu(frame)
+        self._btns = _draw_menu(frame)
+        self._draw_cam_button(frame)
         cv2.imshow(WIN_NAME, frame)
 
         if key == ord("1"):
             self._enter_rapid3d()
         elif key == ord("2"):
             self._enter_multiview()
+        elif key in (ord("n"), ord("N")):
+            self._switch_camera()
         elif key in (ord("q"), ord("Q"), 27):
             self._state = AppState.EXIT
 
@@ -195,10 +303,10 @@ class App:
         # Pinch detection
         pinching = self._pinch.update(lms)
         if self._kbd_pencil_override:
-            pinching = not pinching
+            pinching = True
 
         gesture = self._gesture.update(lms)
-        if gesture == GestureState.FIST:
+        if gesture == GestureState.FIST and not pinching:
             self._rapid3d.store.undo()
 
         # Pencil state machine
@@ -233,6 +341,18 @@ class App:
         if lms is not None and self._overlay.show_skeleton:
             self._tracker.draw_landmarks(frame, lms)
 
+        fh, fw = frame.shape[:2]
+        v = self._rapid3d.viewer if self._rapid3d.viewer_started else None
+        self._draw_3d_panel(frame, v, (fw - 372, 80, 360, 270), "3D View", "Starting 3D view...")
+        self._btns = []
+        self._draw_button_bar(frame, [
+            ("Depth-", ord("[")), ("Depth+", ord("]")), ("Depth mode", ord("m")),
+            ("Front", ord("f")), ("Top", ord("t")), ("Side", ord("s")), ("Iso", ord("i")),
+            ("Orbit<", ord("j")), ("Orbit>", ord("l")),
+            ("Undo", ord("z")), ("Redo", ord("y")), ("Clear", ord("c")),
+            ("Export", ord("e")), ("Menu", 27),
+        ], frame.shape[0] - 70)
+        self._draw_cam_button(frame)
         cv2.imshow(WIN_NAME, frame)
 
     def _run_multiview_frame(self, frame: np.ndarray, key: int) -> None:
@@ -257,10 +377,10 @@ class App:
         # Pinch detection
         pinching = self._pinch.update(lms)
         if self._kbd_pencil_override:
-            pinching = not pinching
+            pinching = True
 
         gesture = self._gesture.update(lms)
-        if gesture == GestureState.FIST:
+        if gesture == GestureState.FIST and not pinching:
             self._multiview.current_canvas.store.undo()
 
         # Pencil state machine updates active canvas
@@ -284,6 +404,17 @@ class App:
 
         # Assemble composite UI
         composite = self._multiview.render_composite(frame, canvas_pos)
+        mv = self._multiview
+        self._draw_3d_panel(composite, mv.viewer if mv.viewer_started else None,
+                            (958, 98, 310, 220), "3D Model", "Press R to reconstruct")
+        self._btns = []
+        self._draw_button_bar(composite, [
+            ("Front", ord("f")), ("Top", ord("t")), ("Side", ord("s")),
+            ("Reconstruct", ord("r")), ("Export", ord("e")), ("Save", ord("p")),
+            ("Undo", ord("z")), ("Redo", ord("y")), ("Clear", ord("c")),
+            ("Grid", ord("g")), ("Menu", 27),
+        ], composite.shape[0] - 72)
+        self._draw_cam_button(composite)
         cv2.imshow(WIN_NAME, composite)
 
     # ── state transitions ─────────────────────────────────────────────────────
@@ -312,6 +443,9 @@ class App:
             self._multiview.viewer.stop()
             self._multiview = None
         self._store = None
+        self._o3d_viewer = None
+        self._drag_last = None
+        self._o3d_pic = None
         self._state = AppState.MENU
 
     # ── key handlers ─────────────────────────────────────────────────────────
@@ -333,6 +467,8 @@ class App:
         if k == " ":
             self._kbd_pencil_override = not self._kbd_pencil_override
             log.debug("Keyboard pencil override: %s", self._kbd_pencil_override)
+        elif k == "n":
+            self._switch_camera()
         elif k == "h":
             self._overlay.toggle_skeleton()
 

@@ -61,12 +61,14 @@ class O3DViewer:
         window_name: str = "FormFlow 3D View",
         width: int = 800,
         height: int = 700,
+        visible: bool = True,
         show_grid: bool = True,
         show_axes: bool = True,
     ) -> None:
         self.window_name = window_name
         self.width = width
         self.height = height
+        self.visible = visible
         self.show_grid = show_grid
         self.show_axes = show_axes
 
@@ -88,26 +90,24 @@ class O3DViewer:
                 window_name=self.window_name,
                 width=self.width,
                 height=self.height,
-                visible=True,
+                visible=self.visible,
             )
+            self._is_active = True  # add_geometry/reset_view are no-ops until set
             render_opts = self.vis.get_render_option()
             render_opts.background_color = np.array([0.08, 0.08, 0.10], dtype=np.float64)
             render_opts.point_size = 5.0
             render_opts.line_width = 3.0
             render_opts.show_coordinate_frame = False
 
+            # Workspace box goes first: it seeds the view bounding box ([-1, 1]^3)
+            self.add_geometry("box", create_bounding_box())
+            if self.show_grid:
+                self.add_geometry("grid", create_ground_grid(size=1.0, step=0.25, y_level=-1.0))
             if self.show_axes:
                 axes = o3d.geometry.TriangleMesh.create_coordinate_frame(size=0.4, origin=[-1.0, -1.0, -1.0])
                 self.add_geometry("axes", axes)
 
-            if self.show_grid:
-                grid = create_ground_grid(size=1.0, step=0.25, y_level=-1.0)
-                self.add_geometry("grid", grid)
-                box = create_bounding_box()
-                self.add_geometry("box", box)
-
             self.reset_view("iso")
-            self._is_active = True
             log.info("Open3D visualizer window opened.")
             return True
         except Exception as e:
@@ -120,8 +120,10 @@ class O3DViewer:
             return
         if name in self._geometries:
             self.remove_geometry(name)
+        first = not self._geometries
         self._geometries[name] = geom
-        self.vis.add_geometry(geom, reset_bounding_box=False)
+        # The first geometry seeds the view bounding box (else clipping planes are empty)
+        self.vis.add_geometry(geom, reset_bounding_box=first)
 
     def update_geometry(self, name: str, geom: Optional[o3d.geometry.Geometry] = None) -> None:
         if not self.vis or not self._is_active:
@@ -160,6 +162,17 @@ class O3DViewer:
             self._is_active = False
             return False
 
+    def render_image(self) -> Optional[np.ndarray]:
+        """Return the current render as a BGR uint8 image (for embedding in the main window)."""
+        if not self.vis or not self._is_active:
+            return None
+        try:
+            buf = np.asarray(self.vis.capture_screen_float_buffer(False))
+            return (buf[:, :, ::-1] * 255).astype(np.uint8)
+        except Exception as e:
+            log.debug("Open3D capture error: %s", e)
+            return None
+
     def reset_view(self, preset: str = "iso") -> None:
         """Preset camera angles: front, top, side, iso."""
         if not self.vis or not self._is_active:
@@ -169,22 +182,22 @@ class O3DViewer:
             ctr.set_lookat(np.array([0.0, 0.0, 0.0]))
             ctr.set_front(np.array([0.0, 0.0, 1.0]))
             ctr.set_up(np.array([0.0, 1.0, 0.0]))
-            ctr.set_zoom(0.7)
+            ctr.set_zoom(0.9)
         elif preset == "top":
             ctr.set_lookat(np.array([0.0, 0.0, 0.0]))
             ctr.set_front(np.array([0.0, 1.0, 0.0]))
             ctr.set_up(np.array([0.0, 0.0, -1.0]))
-            ctr.set_zoom(0.7)
+            ctr.set_zoom(0.9)
         elif preset == "side":
             ctr.set_lookat(np.array([0.0, 0.0, 0.0]))
             ctr.set_front(np.array([1.0, 0.0, 0.0]))
             ctr.set_up(np.array([0.0, 1.0, 0.0]))
-            ctr.set_zoom(0.7)
+            ctr.set_zoom(0.9)
         elif preset == "iso":
             ctr.set_lookat(np.array([0.0, 0.0, 0.0]))
             ctr.set_front(np.array([0.8, 0.6, 1.0]))
             ctr.set_up(np.array([0.0, 1.0, 0.0]))
-            ctr.set_zoom(0.7)
+            ctr.set_zoom(0.9)
 
     def orbit(self, delta_x: float, delta_y: float) -> None:
         """Rotate camera view."""

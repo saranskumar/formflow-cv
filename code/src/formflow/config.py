@@ -33,8 +33,8 @@ class Config:
     one_euro_d_cutoff: float = 1.0
 
     # --- Pinch ---
-    pinch_on_threshold: float = 0.06   # normalised by hand size
-    pinch_off_threshold: float = 0.10
+    pinch_on_threshold: float = 0.25   # normalised by hand size
+    pinch_off_threshold: float = 0.40
     pinch_debounce_frames: int = 3
 
     # --- Gestures (dwell, fist, palm) ---

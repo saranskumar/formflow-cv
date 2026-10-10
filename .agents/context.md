@@ -3,13 +3,13 @@
 ## Stack
 - Python 3.12.8
 - OpenCV (opencv-python 4.10)
-- MediaPipe Hands 1.0.1
+- MediaPipe Hands 0.10.14 (fixed compatibility with solutions.hands)
 - Open3D 0.20
 - NumPy 2.5, SciPy 1.18, scikit-image 0.26
 - pytest 9.1
 
 ## Active Task
-All MVP Phases (0-6) Complete.
+FormFlow is running in interactive session (Task ID: `task-138`, PID 34600).
 
 ## Recent Decisions
 - **Phase 0 & 1 (Hand interaction):** Threaded webcam capture, MediaPipe 21 landmarks, One-Euro fingertip filter, pinch detection with hysteresis & debounce, virtual pencil state machine, StrokeStore with 2D/3D stroke support.

@@ -112,7 +112,9 @@ class ViewCanvas:
     ) -> np.ndarray:
         """Render beautiful visual canvas with grid, guides, filled mask (optional), and strokes."""
         # Dark canvas background
-        canvas = np.full((self.size, self.size, 3), (22, 22, 28), dtype=np.uint8)
+        if getattr(self, "_bg", None) is None or self._bg.shape[0] != self.size:
+            self._bg = np.full((self.size, self.size, 3), (22, 22, 28), dtype=np.uint8)
+        canvas = self._bg.copy()  # np.full with a tuple fill is ~20x slower than copy
 
         # Grid and axes
         draw_grid_and_axes(canvas, grid_step=64, show_grid=show_grid, axis_labels=self.axis_labels)

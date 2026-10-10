@@ -76,8 +76,9 @@ class MultiviewSession:
         self.disagreements: List[ViewDisagreement] = []
 
         # 3D Viewer
-        self.viewer = O3DViewer(window_name="FormFlow - Reconstructed 3D Mesh")
+        self.viewer = O3DViewer(window_name="FormFlow - Reconstructed 3D Mesh", width=480, height=360, visible=False)
         self.viewer_started = False
+        self._mesh_dirty = False
 
         # Status and notifications
         self.status_message = "Step 1: Draw FRONT view outline"
@@ -264,7 +265,7 @@ class MultiviewSession:
                     # 3. Marching cubes mesh extraction
                     if not self.hull_result.is_empty:
                         self.mesh_result = extract_mesh_from_hull(self.hull_result)
-                        self._update_viewer_mesh()
+                        self._mesh_dirty = True  # applied on the main thread
                         status = f"Reconstructed {self.mesh_result.triangle_count} faces! Watertight: {'Yes' if self.mesh_result.is_watertight else 'No'}"
                         self.set_notification(status, duration=5.0)
                     else:
@@ -292,7 +293,10 @@ class MultiviewSession:
             self.viewer.add_geometry("mesh", self.mesh_result.mesh)
 
     def update_3d_view(self) -> None:
-        """Step Open3D window events."""
+        """Apply any pending mesh and step Open3D."""
+        if self._mesh_dirty:
+            self._mesh_dirty = False
+            self._update_viewer_mesh()
         if self.viewer_started:
             if not self.viewer.step():
                 self.viewer_started = False
@@ -330,7 +334,9 @@ class MultiviewSession:
     def render_composite(self, camera_frame: np.ndarray, cursor_canvas_pos: Optional[Tuple[float, float]]) -> np.ndarray:
         """Assemble the complete FormFlow Multi-view UI on a 1280x720 canvas."""
         target_w, target_h = 1280, 720
-        ui = np.full((target_h, target_w, 3), (16, 16, 20), dtype=np.uint8)
+        if getattr(self, "_ui_bg", None) is None:
+            self._ui_bg = np.full((target_h, target_w, 3), (16, 16, 20), dtype=np.uint8)
+        ui = self._ui_bg.copy()
         font = cv2.FONT_HERSHEY_SIMPLEX
 
         # 1. Header Banner
