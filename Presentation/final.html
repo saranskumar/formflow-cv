@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FormFlow - Final Presentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #fff;
+      --fg: #111;
+      --muted: #666;
+      --line: #ddd;
+      --soft: #f5f5f5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    .deck { position: relative; width: 100vw; height: 100vh; }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      padding: clamp(2rem, 5vw, 4rem) clamp(2rem, 6vw, 5rem);
+      background: var(--bg);
+    }
+
+    .slide.active { display: flex; }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: clamp(1.5rem, 4vh, 2.5rem);
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand { color: var(--fg); font-weight: 500; }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      max-width: 14ch;
+    }
+
+    h2 {
+      font-size: clamp(1.4rem, 3vw, 2.1rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.35rem;
+    }
+
+    .tagline {
+      margin-top: 1rem;
+      font-size: clamp(1rem, 1.8vw, 1.2rem);
+      color: var(--muted);
+      max-width: 42ch;
+      line-height: 1.5;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: clamp(1.25rem, 3vh, 2rem);
+      max-width: 52ch;
+      line-height: 1.5;
+    }
+
+    .hero-block, .content, .closing {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    .pill {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      border: 1px solid var(--line);
+      padding: 0.4rem 0.7rem;
+      margin-bottom: 1.25rem;
+      width: fit-content;
+    }
+
+    .quote {
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+      line-height: 1.55;
+      max-width: 50ch;
+      border-left: 2px solid var(--fg);
+      padding-left: 1.1rem;
+    }
+
+    .quote-note {
+      margin-top: 1.25rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      max-width: 48ch;
+      line-height: 1.5;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      padding: 1.1rem 1.15rem;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.45rem;
+    }
+
+    .card p, .card li {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .card li::before {
+      content: "- ";
+      color: var(--fg);
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    .mode-num {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      margin-bottom: 0.4rem;
+    }
+
+    .flow {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .flow span {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.72rem;
+      border: 1px solid var(--line);
+      padding: 0.4rem 0.65rem;
+    }
+
+    .flow .arrow {
+      border: none;
+      color: var(--muted);
+      padding: 0;
+      font-size: 0.9rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--line);
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--line);
+    }
+
+    th {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--soft);
+      font-weight: 500;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .diagram {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: clamp(0.62rem, 1.15vw, 0.78rem);
+      line-height: 1.45;
+      border: 1px solid var(--line);
+      padding: 1rem 1.15rem;
+      color: var(--fg);
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .arch {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .arch-row {
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .arch-row.shared { grid-template-columns: 1fr; }
+    .arch-row.split { grid-template-columns: 1fr 1fr; }
+    .arch-row.outputs { grid-template-columns: 1fr 1fr; }
+
+    .arch-box {
+      border: 1px solid var(--line);
+      padding: 0.7rem 0.85rem;
+      background: var(--bg);
+    }
+
+    .arch-box.soft { background: var(--soft); }
+
+    .arch-box.accent {
+      border-color: var(--fg);
+      background: var(--soft);
+    }
+
+    .arch-label {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+
+    .arch-title {
+      font-size: 0.92rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+
+    .arch-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.3rem;
+    }
+
+    .arch-chips span {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.68rem;
+      border: 1px solid var(--line);
+      padding: 0.22rem 0.45rem;
+      color: var(--fg);
+      background: var(--bg);
+    }
+
+    .arch-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .arch-list li {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.35;
+      padding-left: 0.85rem;
+      position: relative;
+    }
+
+    .arch-list li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--fg);
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+    }
+
+    .arch-bridge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .arch-bridge::before,
+    .arch-bridge::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 2.2rem 1fr;
+      gap: 0.75rem;
+      align-items: start;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 0.65rem;
+    }
+
+    .step:last-child { border-bottom: none; padding-bottom: 0; }
+
+    .step .n {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      padding-top: 0.15rem;
+    }
+
+    .step strong {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.15rem;
+    }
+
+    .step p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .principle {
+      font-size: clamp(1.3rem, 3vw, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    .title-facts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2rem;
+      max-width: 36rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .title-facts p {
+      font-size: 1rem;
+      line-height: 1.4;
+    }
+
+    .footer-nav {
+      position: fixed;
+      bottom: 1rem;
+      right: 1.25rem;
+      left: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .progress {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      pointer-events: auto;
+    }
+
+    .nav-btns {
+      display: flex;
+      gap: 0.35rem;
+      pointer-events: auto;
+    }
+
+    .nav-btns button {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.7rem;
+      background: var(--bg);
+      color: var(--fg);
+      border: 1px solid var(--line);
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+    }
+
+    .nav-btns button:hover {
+      background: var(--fg);
+      color: var(--bg);
+      border-color: var(--fg);
+    }
+
+    .hint {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      margin-right: auto;
+      margin-left: 0.75rem;
+    }
+
+    @media (max-width: 900px) {
+      .grid-2, .grid-3, .title-facts,
+      .arch-row.split, .arch-row.outputs { grid-template-columns: 1fr; }
+      .hint { display: none; }
+    }
+
+    @media print {
+      @page { size: landscape; margin: 8mm; }
+
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .deck {
+        width: auto;
+        height: auto;
+        position: static;
+      }
+
+      .slide {
+        position: relative !important;
+        inset: auto !important;
+        display: flex !important;
+        width: 100%;
+        height: auto;
+        min-height: 0;
+        margin: 0;
+        padding: 6mm 8mm;
+        page-break-after: always;
+        break-after: page;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .slide:last-of-type {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .footer-nav { display: none !important; }
+      .diagram, .arch-box { break-inside: avoid; }
+    }
+
+
+
+    :root{--bg:#fafaf8;--fg:#1a1a1a;--muted:#5f625f;--line:#dcdcd6;--soft:#f0f0ec;--accent:#1f4e79}
+    html,body{background:var(--bg);font-family:Inter,"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+    .slide{background:var(--bg);overflow-y:auto}
+    @media print{.slide{overflow:visible}}
+    .meta,.pill,.mode-num,th,.flow span,.arch-label,.arch-chips span,.arch-bridge,.progress,.nav-btns button,.hint,.step .n,.diagram,code,.stat span{font-family:"JetBrains Mono","IBM Plex Mono",Consolas,monospace}
+    .brand{color:var(--accent);font-weight:600}
+    h1{max-width:none;color:var(--fg)}
+    .pill{color:var(--accent);border-color:var(--accent);background:none}
+    .quote{border-left:3px solid var(--accent)}
+    .card,.arch-box,.stat,.diagram,table{background:#fff;border:1px solid var(--line);border-radius:4px}
+    .card li::before{color:var(--accent)}
+    .mode-num{color:var(--accent)}
+    .arch-box.accent{border-color:var(--accent);background:#fff;box-shadow:inset 3px 0 0 var(--accent)}
+    .arch-box.soft{background:var(--soft)}
+    .arch-chips span{background:var(--soft);border-radius:2px}
+    .arch-list li::before,.step .n{color:var(--accent)}
+    th{background:var(--soft);color:var(--muted)}
+    code{background:var(--soft);color:var(--accent);border-radius:2px}
+    .stat b{color:var(--accent)}
+    .step strong,.card strong,.quote-note strong,.subtitle strong{color:var(--fg)}
+    .nav-btns button{border-radius:2px}
+    .nav-btns button:hover{background:var(--fg);color:#fff;border-color:var(--fg)}
+    .w5{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin:-.2rem 0 .8rem;padding:.5rem .7rem;border-left:3px solid var(--accent);background:var(--soft);font-size:.74rem;line-height:1.35;color:var(--muted)}
+    .w5 b{display:block;font-family:"JetBrains Mono",monospace;font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:.1rem}
+    .dense .card p,.dense .card li{font-size:.82rem;line-height:1.4}
+    .dense table{font-size:.8rem}.dense th,.dense td{padding:.4rem .8rem}
+    .dense .subtitle{margin-bottom:.9rem}
+    .dense .step{padding-bottom:.45rem}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-top:1rem}
+    .stat{border:1px solid var(--line);padding:1rem}.stat b{display:block;font-size:2rem;font-weight:600;letter-spacing:-.03em}
+    .stat span{font-family:"IBM Plex Mono",monospace;font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+    code{font-family:"IBM Plex Mono",monospace;font-size:.85em;background:var(--soft);padding:.05rem .3rem}
+    @media (max-width:900px){.stats{grid-template-columns:1fr 1fr}.slide{overflow:auto}}
+  </style>
+</head>
+<body>
+  <div class="deck" id="deck">
+
+    <section class="slide active">
+      <div class="meta"><span class="brand">FormFlow</span><span>Intro to Computer Vision / Final Presentation</span></div>
+      <div class="hero-block">
+        <div class="pill">Intro to Computer Vision / Final Presentation</div>
+        <h1>FormFlow</h1>
+        <p class="tagline">Markerless hand-gesture sketching and multi-view silhouette reconstruction: monocular hand pose estimation, signal conditioning, and voxel visual hull, running in real time in the browser.</p>
+        <div class="title-facts">
+          <div><div class="mode-num">COURSE</div><p>Introduction to Computer Vision</p></div>
+          <div><div class="mode-num">PRESENTED BY</div><p>Saran S Kumar / 453</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>01 / Problem</span></div>
+      <div class="content"><h2>Problem statement</h2><p class="subtitle">Task definition and constraints</p>
+<p class="quote">Develop a computer-vision-based system that captures freehand sketches through hand gestures and combines multiple 2D views (Front, Top, and Side) to reconstruct an approximate 3D representation without conventional CAD modelling.</p>
+<div class="grid-3" style="margin-top:1.2rem"><div class="card"><h3>Input</h3><ul><li>Monocular RGB webcam, no depth sensor</li><li>No markers, gloves or wearables</li><li>Unconstrained distance: laptop to across-the-room</li></ul></div><div class="card"><h3>Output</h3><ul><li>Watertight triangle mesh (OBJ / binary STL)</li><li>Interactive 3D scene</li><li>Approximate shape, for ideation</li></ul></div><div class="card"><h3>Constraints</h3><ul><li>No custom model training</li><li>Interactive frame rate on commodity hardware</li><li>Robust to jitter, occlusion, bystanders</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>02 / What, Why, Who, Whom</span></div>
+      <div class="content"><h2>What, why, who, whom, when, where, how</h2><p class="subtitle">The project at a glance, answered in the six questions.</p><div class="grid-3"><div class="card"><div class="mode-num">WHAT</div><h3>What</h3><ul><li>FormFlow: sketch in 3D with hand gestures, or draw Front / Side / Top outlines</li><li>Output: an approximate watertight 3D mesh (OBJ / STL)</li><li>Built from classical CV and geometry on top of a pre-trained hand landmarker</li></ul></div><div class="card"><div class="mode-num">WHY</div><h3>Why</h3><ul><li>CAD needs training and mouse-and-menu input; that slows ideation</li><li>Beginners just want to see an idea in 3D quickly</li><li>No depth sensor and no model training required</li></ul></div><div class="card"><div class="mode-num">WHO</div><h3>Who</h3><ul><li>Built by Saran S Kumar (453), solo project</li><li>Course: Introduction to Computer Vision</li><li>Users: students, makers, designers, educators</li></ul></div><div class="card"><div class="mode-num">WHOM</div><h3>Whom (it is for)</h3><ul><li>Beginners and non-experts without CAD skills</li><li>Anyone presenting on a projector or at a distance</li><li>Evaluated by the course instructors against the stated problem</li></ul></div><div class="card"><div class="mode-num">WHEN / WHERE</div><h3>When and where</h3><ul><li>When: early ideation, before CAD; interactive, every video frame</li><li>Where: browser (Chrome / Edge) on a laptop or desktop with a webcam</li><li>Offline and local: vendored libraries, localhost server</li></ul></div><div class="card"><div class="mode-num">HOW</div><h3>How</h3><ul><li>Webcam to 21 hand landmarks, conditioned into a stable pointer</li><li>Gestures drive a 3D sketch engine</li><li>Outlines are rasterised, intersected into a voxel visual hull and meshed with surface nets</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>03 / Approach</span></div>
+      <div class="content"><h2>Approach: what is classical CV and what is off-the-shelf</h2><p class="subtitle">Only the landmark regressor is a pre-trained network. Everything downstream is deterministic geometry and signal processing.</p><table><thead><tr><th>Stage</th><th>Method</th><th>Origin</th></tr></thead><tbody><tr><td>Hand localisation + 21 keypoints</td><td>MediaPipe Hand Landmarker (palm detector + landmark regressor), 2D and metric 3D world landmarks</td><td>Pre-trained, used as a sensor</td></tr><tr><td>Forearm hint</td><td>MediaPipe Pose Landmarker (lite): wrist 15/16, elbow 13/14</td><td>Pre-trained, optional</td></tr><tr><td>Gesture classification</td><td>Palm-normalised distance ratios, hysteresis, frame debounce</td><td>Implemented here</td></tr><tr><td>Cursor stabilisation</td><td>One-Euro filter, glitch rejection, grasp latch, palm anchoring</td><td>Implemented here</td></tr><tr><td>Silhouette from a photo</td><td>Otsu threshold, connected components, hole fill, boundary tracing, Douglas-Peucker</td><td>Implemented here</td></tr><tr><td>3D reconstruction</td><td>Even-odd scanline rasterisation, voxel intersection (visual hull), surface nets</td><td>Implemented here</td></tr></tbody></table></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>04 / Planned vs Delivered</span></div>
+      <div class="content"><h2>Planned vs delivered</h2><p class="subtitle">The proposal was a desktop Python app; the final system moved the real-time pipeline into the browser.</p><table><thead><tr><th>Aspect</th><th>Idea proposal</th><th>Final system</th></tr></thead><tbody><tr><td>Runtime</td><td>Python + OpenCV desktop window</td><td>Browser (ES modules), FastAPI backend for files only</td></tr><tr><td>Hand tracking</td><td>MediaPipe Hands (Python, CPU)</td><td>MediaPipe Tasks Vision, WASM, GPU delegate with CPU fallback</td></tr><tr><td>Rendering</td><td>Open3D</td><td>Three.js (WebGL); custom camera model kept in a pure-logic engine</td></tr><tr><td>Reconstruction</td><td>Voxel visual hull + marching cubes</td><td>Voxel visual hull + surface nets, per-view IoU re-projection score</td></tr><tr><td>Export</td><td>OBJ / STL / OpenSCAD</td><td>OBJ (ASCII) + binary STL; OBJ/STL import</td></tr><tr><td>Verification</td><td>-</td><td>188 Node tests (core logic, no camera needed) + 21 pytest tests</td></tr></tbody></table></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>05 / Tech Stack</span></div>
+      <div class="content"><h2>Tech stack</h2><p class="subtitle">All dependencies are vendored; the app runs offline.</p><table><thead><tr><th>Layer</th><th>Technology</th><th>Detail</th></tr></thead><tbody><tr><td>Perception</td><td>MediaPipe Tasks Vision (WASM)</td><td>hand_landmarker.task, pose_landmarker_lite.task, VIDEO running mode</td></tr><tr><td>Core logic</td><td>JavaScript ES modules, no framework</td><td>~2.8k lines in <code>core/</code>, pure functions, runs unchanged in Node</td></tr><tr><td>Rendering</td><td>Three.js (WebGL)</td><td>Draws engine state; camera FOV matches the engine exactly</td></tr><tr><td>Backend</td><td>Python 3.12, FastAPI, Uvicorn</td><td>Static hosting, WebSocket <code>/ws</code>, REST <code>/api</code></td></tr><tr><td>Test</td><td>node --test, pytest</td><td>188 + 21 tests</td></tr></tbody></table></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>06 / System Architecture</span></div>
+      <div class="content dense"><h2>System architecture</h2><p class="subtitle">Layered. The perception and engine layers are pure logic and are unit-tested without a camera or DOM.</p><div class="arch"><div class="arch-row shared"><div class="arch-box soft"><div class="arch-label">Sensing</div><div class="arch-title">Camera frame to hand landmarks</div><div class="arch-chips"><span>getUserMedia</span><span>ROI crop</span><span>HandLandmarker (21 pts, image + world)</span><span>PoseLandmarker (forearm)</span></div></div></div><div class="arch-bridge">perception (core/)</div><div class="arch-row split"><div class="arch-box "><div class="arch-label">Tracking</div><div class="arch-title">tracker, select, track, oneEuro, roi, forearm</div><div class="arch-chips"><span>Dedupe</span><span>Identity by position</span><span>Role assignment</span><span>One-Euro</span><span>Glitch + latch</span></div></div><div class="arch-box accent"><div class="arch-label">Gestures</div><div class="arch-title">gestures, controller, mapping</div><div class="arch-chips"><span>Pinch</span><span>Grab</span><span>Fist</span><span>Peace</span><span>Two-hand zoom</span><span>Reach mapping</span></div></div></div><div class="arch-bridge">engine (pure logic)</div><div class="arch-row split"><div class="arch-box "><div class="arch-label">Sketch engine</div><div class="arch-title">sketch, shapes, planes, stitch, trace</div><div class="arch-chips"><span>Orbit camera</span><span>Ray picking</span><span>Primitives</span><span>Stitching</span><span>Silhouette trace</span></div></div><div class="arch-box accent"><div class="arch-label">Reconstruction</div><div class="arch-title">hull, meshio, exporters</div><div class="arch-chips"><span>Rasterise</span><span>Voxel AND</span><span>Largest CC</span><span>Surface nets</span><span>OBJ / STL</span></div></div></div><div class="arch-bridge">presentation and persistence</div><div class="arch-row outputs"><div class="arch-box soft"><div class="arch-label">Browser UI</div><div class="arch-title">render/scene.js, ui/*</div><div class="arch-chips"><span>Three.js</span><span>HUD</span><span>Overlay</span></div></div><div class="arch-box soft"><div class="arch-label">Backend (Python)</div><div class="arch-title">server/app.py</div><div class="arch-chips"><span>Static files</span><span>WebSocket export</span><span>Calibration store</span><span>Model import</span></div></div></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>07 / Modules (core logic)</span></div>
+      <div class="content"><h2>Method and modules: core logic</h2><p class="subtitle">Each module has one responsibility and one method. Everything here is pure and unit-tested.</p><table><thead><tr><th>Module</th><th>Files (lines)</th><th>Method</th><th>Responsibility</th></tr></thead><tbody><tr><td>Perception</td><td>gestures 113, track 109, oneEuro 43, tracker 189, select 73, roi 83, forearm 53</td><td>Palm-normalised ratios, hysteresis, One-Euro, ROI follow, pose hint</td><td>Landmarks to a stable pointer and gesture flags</td></tr><tr><td>Interaction</td><td>controller 133, controls 36, mapping 62, reach 59, practice 46, settings 62</td><td>State machine, isotropic region map, personal thresholds</td><td>Gestures and mouse to actions; calibration</td></tr><tr><td>Sketch engine</td><td>sketch 366, shapes 227, planes 101, stitch 106</td><td>Orbit camera, ray unprojection, segment picking, nearest-end join</td><td>Scene state, tools, undo, orthographic cells</td></tr><tr><td>Reconstruction</td><td>hull 346, trace 203</td><td>Even-odd raster, voxel AND, largest CC, surface nets; Otsu + Douglas-Peucker</td><td>Outlines or photos to a closed mesh</td></tr><tr><td>Mesh I/O</td><td>meshio 169, imported 63, exporters 48, vec 11</td><td>OBJ / STL parse and weld, binary STL write</td><td>Import, fit, export</td></tr></tbody></table></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>08 / Modules (application)</span></div>
+      <div class="content"><h2>Method and modules: application shell</h2><p class="subtitle">Thin layers that connect the pure core to the camera, the screen and the disk.</p><table><thead><tr><th>Module</th><th>Files (lines)</th><th>Method</th><th>Responsibility</th></tr></thead><tbody><tr><td>Application</td><td>main 806</td><td>Event loop: camera frame, inference, controller, render</td><td>Wires every module together</td></tr><tr><td>Rendering</td><td>render/scene 332</td><td>Three.js draws engine state each frame</td><td>Display only, no state</td></tr><tr><td>UI</td><td>hud 135, guide 220, planebar 127, refimages 130, settings 74, hullpanel 76, overlay 66, prompt 41, diagnostics 45</td><td>Generated from the shared controls table</td><td>Buttons, guide, panels, status</td></tr><tr><td>Browser link</td><td>bridge 43</td><td>WebSocket client with retry</td><td>Sends exports and calibration to the backend</td></tr><tr><td>Backend (Python)</td><td>server/app 163, __main__ 23</td><td>FastAPI, validated JSON messages, name whitelist</td><td>Serves the app, saves files, stores calibration</td></tr><tr><td>Tests</td><td>web/test (188), tests/test_server (21)</td><td>node --test, pytest</td><td>Regression safety for every module</td></tr></tbody></table></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>09 / Frame Pipeline</span></div>
+      <div class="content"><h2>Per-frame processing pipeline</h2><p class="subtitle">Every video frame passes through the same sequence; each stage has a unit-tested contract.</p><div style="display:grid;grid-template-columns:1.25fr 1fr;gap:.8rem"><div class="diagram" style="">video frame
+  -&gt; RoiPlanner.plan()        crop square ROI around hands
+  -&gt; HandLandmarker.detect    21 landmarks x N hands
+                              + 21 world landmarks (m)
+  -&gt; PoseLandmarker (opt.)    wrist / elbow hint
+  -&gt; dedupeDetections()       merge duplicate hands
+  -&gt; HandTracker.step()       identity, roles, grace
+  -&gt; HandTrack.step()         decode + condition cursor
+  -&gt; Mapper.map()             image -&gt; screen (isotropic)
+  -&gt; Controller.update()      state machine
+  -&gt; Sketch (tools, camera)   commit items
+  -&gt; SceneView.render()       WebGL</div><div class="card"><h3>Design rules</h3><ul><li>Normalised units everywhere: image fractions, palm-relative ratios</li><li>Time is passed in (seconds), never read from a clock, so tests are deterministic</li><li>Stages fail soft: lost hand cancels the stroke, never invents points</li><li>GPU delegate first, CPU fallback on failure</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>10 / Hand Detection</span></div>
+      <div class="content"><h2>Hand detection and identity tracking</h2><p class="subtitle">Raw detections flicker, duplicate and swap labels. The tracker makes them usable.</p><div class="w5"><span><b>What</b>Turns noisy detections into two stable hands with roles.</span><span><b>Why</b>Raw labels flicker, duplicate and swap, which would break every gesture.</span><span><b>For whom</b>The user, whose hands must not be confused with bystanders.</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem"><table><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody><tr><td>numHands</td><td>4 (select user's 2)</td></tr><tr><td>Detect / presence / track conf.</td><td>0.6 / 0.5 / 0.6 (0.35 far)</td></tr><tr><td>minPalm (wrist to MCP9)</td><td>0.035 of image height</td></tr><tr><td>appearFrames</td><td>3 consecutive frames</td></tr><tr><td>vanishGrace</td><td>0.25 s (0.5 s with wrist)</td></tr><tr><td>matchRadius</td><td>3.5 palms</td></tr><tr><td>Handedness vote window</td><td>10 frames</td></tr><tr><td>Duplicate: wrist dist.</td><td>&lt; 0.6 palm</td></tr></tbody></table><div class="card"><h3>Algorithms</h3><ul><li>Identity by <strong>position</strong> (nearest within matchRadius); handedness label only votes</li><li>Duplicate removal: sort by score then size, drop detections whose wrists are within 0.6 palm</li><li>User hands: largest palm wins, +30% if near previous main hand; bystanders are smaller</li><li>Second hand accepted if opposite label and size &ge; 0.55, or same label, &ge; 0.15 apart and &ge; 0.70</li><li>Roles: main = dominant side, second = other</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>11 / Small Hands</span></div>
+      <div class="content"><h2>Small and distant hands: zoom-and-follow ROI and forearm hint</h2><p class="subtitle">The palm detector runs on a downscaled image, so a hand covering ~3% of a wide shot is missed.</p><div class="w5"><span><b>What</b>Crops the frame around the hands and uses the arm as a second cue.</span><span><b>Why</b>The palm detector misses hands that cover only a few pixels.</span><span><b>For whom</b>Users at a distance or on a projector setup.</span></div><div style="display:grid;grid-template-columns:1.1fr 1fr;gap:.8rem"><div class="diagram" style="">crop size s = max(span_x/aspect, span_y) + reach * palm
+reach = 9 palm sizes,  s in [0.30, 1.0]
+crop centre eased:  c += 0.35 (c_target - c)
+full-frame scan every 20 frames
+full frame if no hand for 0.6 s
+
+landmarks back to full frame:
+  x = roi.x + x_crop * roi.w
+  y = roi.y + y_crop * roi.h</div><div class="card"><h3>Why and how</h3><ul><li>A square crop keeps the aspect ratio, so back-mapping is one scale and one offset</li><li>Periodic full-frame scan finds a second hand or a new user</li><li>Pose model supplies wrist (15/16) and elbow (13/14), visibility &ge; 0.4</li><li>A hand that vanishes next to a known wrist is held longer and re-acquired where the arm went</li><li>Small hands: smoother cursor (cutoff scaled by palm/0.08), debounce 3 frames below palm 0.03</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>12 / Gesture Decoding</span></div>
+      <div class="content"><h2>Gesture decoding</h2><p class="subtitle">Scale- and rotation-invariant features from the 21 landmarks; world (metric 3D) landmarks are preferred.</p><div class="w5"><span><b>What</b>Classifies pinch, grab, fist and peace from landmark ratios.</span><span><b>Why</b>Palm-relative, rotation-proof features work at any distance and angle.</span><span><b>For whom</b>Every user; thresholds adapt to their hand.</span></div><div style="display:grid;grid-template-columns:1.25fr 1fr;gap:.8rem"><div class="diagram" style="">palm  = |wrist - middle_MCP|
+rI    = |thumb_tip - index_tip|  / palm
+rM    = |thumb_tip - middle_tip| / palm
+reach(i) = |lm[i] - wrist|
+
+curled(f)   : reach(tip) &lt; reach(pip)
+extended(f) : reach(tip) &gt; 1.08 * reach(pip)
+
+fist  = all 4 fingers curled
+peace = index, middle extended; ring, pinky curled;
+        min(rI, rM) &gt; 1.3 * on
+pinch = !fist &amp;&amp; rI &lt; th &amp;&amp; rI &lt;= 1.15 * rM
+grab  = !fist &amp;&amp; !pinch &amp;&amp; rM &lt; th &amp;&amp; rM &lt; 0.87 * rI</div><div class="card"><h3>Robustness</h3><ul><li><strong>Hysteresis</strong>: th = on (0.30) to enter, off (0.45) to leave</li><li><strong>Debounce</strong>: pinch/grab 2 frames, fist/peace 3 frames</li><li>Priority: fist &gt; pinch &gt; grab; peace excludes fist</li><li><strong>World landmarks</strong> are rotation-invariant: in image space a sideways hand shrinks the thumb-index gap by cos(theta) and fakes a pinch</li><li>Thresholds personalised in practice mode from median open and pinched ratios</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>13 / Cursor Conditioning</span></div>
+      <div class="content"><h2>Cursor signal conditioning</h2><p class="subtitle">The pointer must land where the user aimed, not where noisy fingertips drifted while closing a pinch.</p><div class="w5"><span><b>What</b>Filters the pointer and compensates for finger drift.</span><span><b>Why</b>Precision drawing needs the stroke to start where the user aimed.</span><span><b>For whom</b>Anyone drawing; shaky hands benefit most.</span></div><div style="display:grid;grid-template-columns:1.3fr 1fr;gap:.8rem"><div class="diagram" style="">One-Euro filter (per axis pair)
+  tau   = 1 / (2*pi*fc)
+  alpha = 1 / (1 + tau/dt)
+  dx^   = alpha_d * (x - x_prev)/dt + (1 - alpha_d) * dx^
+  fc    = fc_min + beta * |dx^|
+  x^    = alpha * x + (1 - alpha) * x^_prev
+fc_min = 1.0 * k,  k = clamp(palm/0.08, 0.3, 1)
+beta = 6,  d_cutoff = 1
+
+palm anchor: cursor = palm_point + lowpass(offset)
+  a = 0.35  (0.2 if palm &lt; 0.04)
+glitch gate: jump &gt; 0.18 image frac -&gt; reject
+  (max 3 consecutive frames)
+grasp latch: on pinch onset rewind 0.15 s,
+  hold 0.08 s;  on release rewind 0.10 s, hold 0.08 s
+freeze 0.3 s after release (controller)</div><div class="card"><h3>Effect</h3><ul><li>Slow motion: heavy smoothing removes jitter</li><li>Fast motion: cutoff rises with speed, so no lag</li><li>Fingertips jitter more than the wrist, so the pointer follows the palm and only low-passes the finger offset</li><li>Latch removes the small cursor drag caused by closing the fingers, and the drift when they open</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>14 / Mapping & Calibration</span></div>
+      <div class="content"><h2>Screen mapping and calibration</h2><p class="subtitle">Same physical movement should move the cursor equally on both axes, at any distance.</p><div class="w5"><span><b>What</b>Maps the hand reach area to the full screen and tunes thresholds.</span><span><b>Why</b>The same movement must feel identical on both axes and at any range.</span><span><b>For whom</b>Different setups: laptop webcam versus room camera.</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem"><div class="card"><h3>Isotropic reach mapping</h3><ul><li>Reach region = box in image fractions mapped onto the whole screen</li><li>Camera pixels are not square in these units, so the region is adjusted: width * camAspect : height = screenAspect</li><li>Grow the short axis if it fits in the image, else shrink the long axis</li><li>Presets: near [0.12 0.10 0.88 0.80], medium, far [0.38 0.32 0.62 0.68], auto</li></ul></div><div class="card"><h3>Calibration</h3><ul><li><strong>Reach calibration</strong>: hold at two opposite corners for 1.0 s, motion &lt; 0.012 image fraction, minimum span 0.05</li><li><strong>Practice mode</strong>: pinch and fist each held 0.5 s</li><li>Personal thresholds: on = c + 0.30 (o - c); off = max(on + 0.08, c + 0.50 (o - c)) with o = median open ratio, c = median pinched ratio; rejected if o &lt; c + 0.2</li><li>Far / auto ranges lower detector confidence to 0.35</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>15 / Controller</span></div>
+      <div class="content"><h2>Interaction state machine</h2><p class="subtitle">Maps hand frames to sketch actions. A mouse generates identical frames, so every path is testable.</p><div class="w5"><span><b>What</b>Decides what each hand frame means as an action.</span><span><b>Why</b>Separating draw and navigate hands avoids accidental edits.</span><span><b>For whom</b>The user; a mouse works identically for testing.</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem"><table><thead><tr><th>Condition</th><th>Action</th></tr></thead><tbody><tr><td>main pinch + second pinch</td><td>Zoom: dist = dist0 * d0 / d, clamp [2.2, 9.0], eased 0.35</td></tr><tr><td>second fist</td><td>Orbit (yaw, pitch) with inertia, decay 0.25 s</td></tr><tr><td>second peace</td><td>Pan, ignore motion &lt; 1 px</td></tr><tr><td>main pinch on HUD</td><td>Press button (consumed, no stroke)</td></tr><tr><td>main pinch in scene</td><td>Begin stroke or shape, add points, commit on release</td></tr><tr><td>main grab in scene</td><td>Pick nearest item, drag, commit on release</td></tr><tr><td>hand lost mid-gesture</td><td>Cancel gesture, no points invented</td></tr></tbody></table><div class="card"><h3>Details</h3><ul><li>Release trim: last 0.10 s (draw) / 0.15 s (drag) of motion dropped, so opening the fingers cannot kink the stroke</li><li>Input frozen 0.3 s after release</li><li>Navigation takes priority; a stray stroke gives way to zoom</li><li>Mouse: left = pinch, Shift+left = grab, right = fist, middle = peace</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>16 / Sketch Engine</span></div>
+      <div class="content"><h2>3D sketch engine</h2><p class="subtitle">Pure logic, no DOM or WebGL. The renderer only reads its state.</p><div class="w5"><span><b>What</b>Holds the scene, camera, tools and undo history.</span><span><b>Why</b>Keeping it free of DOM and WebGL makes it testable and exact.</span><span><b>For whom</b>Developers and the renderer that draws it.</span></div><div style="display:grid;grid-template-columns:1.4fr 1fr;gap:.8rem"><div class="diagram" style="">world: X right, Y up, Z toward viewer
+workspace cube [-1, 1]^3, points clamped to +-1.2
+
+camera: yaw, pitch, dist, target
+  offset = dist * [cos(p) sin(y), sin(p), cos(p) cos(y)]
+  FOV = 2 * atan(1 / (2 * 1.35)) = 40.6 deg
+  (identical to the Three.js PerspectiveCamera)
+
+cursor -&gt; 3D: unproject pixel to a ray, intersect the
+  &quot;glass&quot; plane at the current depth
+  depth step 0.2, snap step 0.1, stroke spacing 0.03
+
+picking: point-to-segment distance in screen px
+  d = |p - (a + t(b-a))|, t = clamp(((p-a).(b-a))/|b-a|^2, 0, 1)</div><div class="card"><h3>Tools</h3><ul><li>Flat: freehand, line, rectangle, circle (40-segment ring)</li><li>Solids: cube, sphere, cylinder, cone, pyramid, all convex</li><li>Outward winding by construction: each triangle oriented away from the centre</li><li>Move, Scale, Undo (operation log)</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>17 / Orthographic Workspace</span></div>
+      <div class="content"><h2>Three-plane orthographic workspace</h2><p class="subtitle">Drawing directly on projection planes makes every outline a true silhouette, with no unprojection ambiguity.</p><div class="w5"><span><b>What</b>Lets the user draw directly on Front, Side and Top planes.</span><span><b>Why</b>Outlines drawn on projection planes are true silhouettes.</span><span><b>For whom</b>Users who think in engineering views.</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem"><div class="diagram" style="">+-----------+-----------+
+|    TOP    |  PREVIEW  |
+|   (x, z)  |  3D hull  |
++-----------+-----------+
+|   FRONT   |   SIDE    |
+|   (x, y)  |  (z, y)   |
++-----------+-----------+
+Front looks along Z   key z
+Side  looks along X   key x
+Top   looks along Y   key y
+scale = min(cw, ch) / (2 * 1.35)  px per world unit,
+identical in all three cells</div><div class="card"><h3>Plane classification</h3><ul><li>An outline lies on the axis a whose coordinate range &lt; 0.02</li><li>Exactly one flat axis, other two ranges &gt; 0.06, else rejected (oblique or sliver)</li><li>Shared axes: Front+Top share X, Front+Side share Y, Top+Side share Z</li><li>Live dimension check with 0.15 tolerance in the workspace</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>18 / Visual Hull</span></div>
+      <div class="content"><h2>Visual hull reconstruction</h2><p class="subtitle">Each silhouette extruded along its viewing ray certainly contains the object. Their intersection is the tightest bound from these views.</p><div class="w5"><span><b>What</b>Intersects extruded silhouettes into a 3D occupancy volume.</span><span><b>Why</b>It is the classical, explainable way to get 3D from outlines.</span><span><b>For whom</b>Users wanting a solid from simple drawings.</span></div><div style="display:grid;grid-template-columns:1.35fr 1fr;gap:.8rem"><div class="diagram" style="">1. collect closed outlines; auto-close gaps &lt; 0.25
+   (path length &gt;= 0.5)
+2. per view: bbox, extent, centre
+3. per axis: target = mean over views measuring it
+4. affine align each view:
+     v&#x27; = (v - ctr_m) * (ext_t / ext_m) + ctr_t
+5. grid: L = 1.1 * max(ext),  h = L / n,  n = 64
+6. rasterise: even-odd scanline fill at voxel centres,
+   union of outlines per view
+7. occupancy (3 masks):
+     occ[i,j,k] = Mf[i,j] AND Ms[k,j] AND Mt[i,k]
+8. largest 6-connected component (iterative DFS)
+9. IoU(mask_view, projection(occ)) per view</div><div class="card"><h3>Properties</h3><ul><li>Complexity O(n<sup>3</sup>): 262,144 voxels at n = 64 (48 while drawing live)</li><li>Two views fix all three dimensions; one view is extruded to thickness max(0.3, 0.5 * min other extent)</li><li>Deterministic, explainable, no training data</li><li>IoU close to 1 means the hull explains the drawings</li><li>Cannot recover concavities</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>19 / Consistency & Alignment</span></div>
+      <div class="content"><h2>Cross-view consistency</h2><p class="subtitle">Hand-drawn views never agree exactly. The system aligns them, and warns when they disagree too much.</p><div class="w5"><span><b>What</b>Aligns shared dimensions and flags disagreement.</span><span><b>Why</b>Hand-drawn views never agree exactly; silent errors would mislead.</span><span><b>For whom</b>The user, who gets a warning instead of a bad model.</span></div><div style="display:grid;grid-template-columns:1.2fr 1fr;gap:.8rem"><div class="diagram" style="">spread_a = max(ext) / min(ext)   over views seeing axis a
+warn if spread_a - 1 &gt; 0.35
+  message: &quot;% differs between views&quot; = 1 - 1/spread_a
+
+align (default): stretch + shift each view so every
+  shared axis has the mean extent and mean centre
+
+axis measured by:
+  X width : front.u , top.u
+  Y height: front.v , side.v
+  Z depth : top.v   , side.u</div><div class="card"><h3>Failure handling</h3><ul><li>No overlap between masks: explicit reason, no empty mesh</li><li>Multiple pieces: largest kept, count reported</li><li>Open or oblique outlines are counted and reported to the user</li><li>Single view: warns that the shape is extruded</li><li>Re-edit loop: change a view and rebuild</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>20 / Meshing</span></div>
+      <div class="content"><h2>Voxel grid to triangle mesh: surface nets</h2><p class="subtitle">Avoids the blocky look of raw voxels and the lookup tables of marching cubes.</p><div class="w5"><span><b>What</b>Converts voxels to a smooth watertight mesh.</span><span><b>Why</b>Raw voxels are blocky and cannot be exported or printed.</span><span><b>For whom</b>Anyone exporting to a slicer or CAD tool.</span></div><div style="display:grid;grid-template-columns:1.3fr 1fr;gap:.8rem"><div class="diagram" style="">pad grid by 1 empty voxel (surfaces always closed)
+F = occupancy (0/1) as float
+soften: separable [1 4 1]/6 blur on x, y, z
+iso level 0.5
+for every cell with mixed corner signs:
+   vertex = mean of linear edge crossings
+     t = (0.5 - f_a) / (f_b - f_a)
+for every sign-changing grid edge:
+   emit quad of the 4 neighbouring cell vertices
+   (2 triangles, flipped if the inside is on the far side)
+if signed volume &lt; 0: flip all triangles</div><div class="card"><h3>Output</h3><ul><li>Watertight, consistently wound mesh</li><li>Volume from signed tetrahedra sum</li><li>Triangle count and size reported in the panel</li><li>Export: ASCII OBJ (5 decimals) and binary STL (80 B header, 50 B per triangle, normal from cross product)</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>21 / Image Silhouette</span></div>
+      <div class="content"><h2>Silhouette extraction from a reference photo</h2><p class="subtitle">Classical image processing to turn a photographed or scanned object into a closed outline for a view.</p><div class="w5"><span><b>What</b>Traces the outline of an object in a picture.</span><span><b>Why</b>Lets a real object seed a view instead of hand drawing.</span><span><b>For whom</b>Users with a photo or scan of the object.</span></div><div style="display:grid;grid-template-columns:1.3fr 1fr;gap:.8rem"><div class="diagram" style="">pixels (RGBA)
+ -&gt; mask
+      auto : |colour - median(border)| / sqrt(3) &gt; t
+             t = max(Otsu(histogram), 18)
+             (alpha &gt; 127 for cut-outs)
+      dark / light : luminance vs Otsu threshold
+ -&gt; morphological closing: erode(dilate(mask)), 3x3
+ -&gt; connected components (4-neighbour)
+ -&gt; keep largest, fill holes (flood from border)
+ -&gt; boundary walk, clockwise, pixel corners
+ -&gt; Douglas-Peucker, eps = 0.012 * scale
+ -&gt; closed outline in [0, 1] picture coordinates</div><div class="card"><h3>Algorithms</h3><ul><li><strong>Otsu</strong>: threshold maximising between-class variance w<sub>B</sub> w<sub>F</sub> (m<sub>B</sub> - m<sub>F</sub>)<sup>2</sup></li><li>Luminance = 0.299 R + 0.587 G + 0.114 B</li><li><strong>Douglas-Peucker</strong>: recursively keep the farthest point beyond epsilon</li><li>The outline is placed in a view and feeds the same hull pipeline</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>22 / Line Stitching</span></div>
+      <div class="content"><h2>Line stitching</h2><p class="subtitle">Hand strokes do not close exactly. A nearest-end search proposes closing or joining.</p><div class="w5"><span><b>What</b>Closes loops and joins nearby strokes.</span><span><b>Why</b>Hands never land exactly, and the hull needs closed outlines.</span><span><b>For whom</b>Every user drawing outlines by hand.</span></div><div style="display:grid;grid-template-columns:1.3fr 1fr;gap:.8rem"><div class="diagram" style="">JOIN_TOL = 0.12 world units (workspace 2.4 wide)
+MIN_LOOP_LENGTH = 0.5
+
+suggestFor(items, stroke):
+  close : gap(first, last) &lt; tol, length &gt;= 0.5
+  join  : min over ends of other lines of |e_a - e_b| &lt; tol
+  pick the smaller gap
+
+joinedCopy: end points replaced by their midpoint
+  (no gap, no duplicate point)
+stitchAll: join and close everything possible
+all operations return NEW items, so they are undoable</div><div class="card"><h3>Why</h3><ul><li>Visual hull needs closed outlines</li><li>Prompt is answered by pinch or key (Y / N)</li><li>Only free and straight lines join; solids are already complete</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>23 / Backend</span></div>
+      <div class="content"><h2>Backend and protocol</h2><p class="subtitle">Thin FastAPI service: the browser is the compute engine, the backend only persists and serves.</p><div class="w5"><span><b>What</b>Serves the app and saves exports and calibration.</span><span><b>Why</b>Browsers cannot write to disk freely; a small server can.</span><span><b>For whom</b>The user, who finds files in the exports folder.</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem"><table><thead><tr><th>Interface</th><th>Behaviour</th></tr></thead><tbody><tr><td>GET /</td><td>Static app, no-cache headers for dev edits</td></tr><tr><td>GET /api/health</td><td>{ok: true}</td></tr><tr><td>GET /api/models[/name]</td><td>List / fetch .obj .stl; name must be in the listing (no traversal)</td></tr><tr><td>GET, PUT /api/calibration</td><td>JSON object, max 10 kB</td></tr><tr><td>WS /ws</td><td>hello, ping, calibration, export</td></tr></tbody></table><div class="card"><h3>Export message</h3><ul><li>{type: export, name, obj, stl(base64)}</li><li>name matches <code>^[A-Za-z0-9][A-Za-z0-9_-]{0,80}$</code></li><li>Writes exact bytes (no CRLF translation); 80 MB cap; base64 validated</li><li>Replies {type: saved, files} or {type: error}</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>24 / Testing</span></div>
+      <div class="content"><h2>Verification</h2><p class="subtitle">Pure, deterministic core logic allows camera-free tests with synthetic landmarks and outlines.</p><div class="stats"><div class="stat"><b>188</b><span>Node tests</span></div><div class="stat"><b>21</b><span>pytest tests</span></div><div class="stat"><b>~4.7k</b><span>lines of app JS</span></div><div class="stat"><b>0</b><span>trained models</span></div></div><div class="grid-3" style="margin-top:1rem"><div class="card"><h3>Perception</h3><ul><li>Gesture hysteresis and debounce</li><li>Tracker: dedupe, label flips, steady identity</li><li>ROI follow and back-mapping</li><li>One-Euro, glitch, latch</li></ul></div><div class="card"><h3>Geometry</h3><ul><li>Visual hull: L bracket, box, three crossed cylinders (known volume)</li><li>Mismatch and single-view warnings</li><li>Closed-manifold, outward winding of every solid</li><li>Stitching, silhouette trace, OBJ / STL round trip</li></ul></div><div class="card"><h3>Application</h3><ul><li>Controller state machine, mouse parity</li><li>Practice and reach calibration</li><li>Server: static, calibration, export, traversal</li><li>UI controls table matches behaviour</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>25 / Limitations</span></div>
+      <div class="content"><h2>Limitations and future work</h2><p class="subtitle">An ideation tool, not manufacturing-grade CAD.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem"><div class="card"><h3>Limitations</h3><ul><li>A visual hull is the maximal shape consistent with the silhouettes: concavities and hidden features are filled</li><li>Silhouettes that disagree give a wrong or empty hull (reported)</li><li>Depth in free 3D drawing is a user-controlled plane, not metric</li><li>Hand landmark quality depends on lighting, occlusion, background, resolution</li><li>Voxel resolution n = 64 limits detail (O(n<sup>3</sup>))</li></ul></div><div class="card"><h3>Future work</h3><ul><li>Photo consistency or colour cues to carve concavities</li><li>Adaptive / octree voxels for higher resolution</li><li>Numeric dimension input and constraints</li><li>Save and load scene projects</li><li>Learned depth cue for free-space drawing</li></ul></div></div></div>
+    </section>
+
+    <section class="slide dense">
+      <div class="meta"><span class="brand">FormFlow</span><span>26 / Run It</span></div>
+      <div class="content"><h2>Run it</h2><p class="subtitle">Windows launcher; any OS manually. Chrome or Edge, allow the camera.</p><div class="diagram" style="">cd code
+run.bat                          # venv, deps, server, browser at http://127.0.0.1:8000
+run.bat --port 9000 --no-browser
+run.bat test                     # pytest + node --test
+
+python -m venv .venv &amp;&amp; pip install -r requirements.txt
+python -m server</div><div class="steps" style="margin-top:.8rem"><div class="step"><div class="n">01</div><div><strong>Practice</strong><p>Hold a pinch and a fist 0.5 s each; thresholds are personalised.</p></div></div><div class="step"><div class="n">02</div><div><strong>Sketch</strong><p>Draw a curve, place a cube and a sphere, grab and move them.</p></div></div><div class="step"><div class="n">03</div><div><strong>Hull</strong><p>Draw closed outlines in Front and Side views, build the 3D shape.</p></div></div><div class="step"><div class="n">04</div><div><strong>Export</strong><p>Export STL and open it in another tool.</p></div></div></div></div>
+    </section>
+
+    <section class="slide">
+      <div class="meta"><span class="brand">FormFlow</span><span>Closing</span></div>
+      <div class="closing">
+        <div class="pill">Computer Vision</div>
+        <p class="quote" style="max-width:48ch">Monocular hand pose estimation, conditioned into a stable pointer and a gesture language, drives sketching in 3D. Closed outlines in orthographic views are rasterised, intersected into a voxel visual hull and meshed with surface nets, with no model training.</p>
+        <p class="principle">Draw it. Reconstruct it. Experience it.</p>
+        <p class="tagline" style="margin-top:.5rem">Thank you. Questions?</p>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="footer-nav">
+    <div class="progress" id="progress">1 / 28</div>
+    <span class="hint">Arrows or buttons / F fullscreen / P print</span>
+    <div class="nav-btns">
+      <button type="button" id="prev" aria-label="Previous slide">Prev</button>
+      <button type="button" id="next" aria-label="Next slide">Next</button>
+      <button type="button" id="print" aria-label="Print slides">Print</button>
+    </div>
+  </div>
+
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const progress = document.getElementById("progress");
+    let i = 0;
+
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach((s, idx) => s.classList.toggle("active", idx === i));
+      progress.textContent = `${i + 1} / ${slides.length}`;
+      history.replaceState(null, "", `#${i + 1}`);
+    }
+
+    document.getElementById("prev").addEventListener("click", () => show(i - 1));
+    document.getElementById("next").addEventListener("click", () => show(i + 1));
+    document.getElementById("print").addEventListener("click", () => window.print());
+
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowRight", "ArrowDown", " ", "PageDown"].includes(e.key)) {
+        e.preventDefault();
+        show(i + 1);
+      } else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) {
+        e.preventDefault();
+        show(i - 1);
+      } else if (e.key === "Home") show(0);
+      else if (e.key === "End") show(slides.length - 1);
+      else if (e.key === "f" || e.key === "F") {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+      } else if (e.key === "p" || e.key === "P") {
+        e.preventDefault();
+        window.print();
+      }
+    });
+
+    const hash = parseInt(location.hash.slice(1), 10);
+    show(Number.isFinite(hash) && hash >= 1 ? hash - 1 : 0);
+  </script>
+</body>
+</html>

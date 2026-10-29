@@ -1,0 +1,99 @@
+[
+  {
+    "id": "rocket",
+    "title": "Rocket",
+    "views": [
+      "front",
+      "side",
+      "top"
+    ],
+    "blurb": "Four fins only separate in the top view, so all three photos are needed.",
+    "tag": "3 photos"
+  },
+  {
+    "id": "house",
+    "title": "House with chimney",
+    "views": [
+      "front",
+      "side",
+      "top"
+    ],
+    "blurb": "The chimney lands exactly where it is in the front, side and top pictures.",
+    "tag": "3 photos"
+  },
+  {
+    "id": "vase",
+    "title": "Vase",
+    "views": [
+      "front"
+    ],
+    "round": true,
+    "blurb": "A round object needs one photo: it is spun into a solid (One view: Round).",
+    "tag": "1 photo, round"
+  },
+  {
+    "id": "head",
+    "title": "Head and shoulders (pencil)",
+    "views": [
+      "front",
+      "side",
+      "top"
+    ],
+    "blurb": "Pencil drawings that run off the picture: the whole figure is still filled in.",
+    "tag": "3 drawings"
+  },
+  {
+    "id": "airplane",
+    "title": "Airplane",
+    "views": [
+      "front",
+      "side",
+      "top"
+    ],
+    "blurb": "Swept wings and a tail fin: the top picture gives the wing shape, front and side give the thickness.",
+    "tag": "3 pictures"
+  },
+  {
+    "id": "castle",
+    "title": "Castle",
+    "views": [
+      "front",
+      "side",
+      "top"
+    ],
+    "blurb": "Four corner towers and a central keep land exactly where the three views cross.",
+    "tag": "3 pictures"
+  },
+  {
+    "id": "robot",
+    "title": "Robot",
+    "views": [
+      "front",
+      "side",
+      "top"
+    ],
+    "blurb": "A boxy figure: head, arms, legs and feet each take their size from a different view.",
+    "tag": "3 pictures"
+  },
+  {
+    "id": "car",
+    "title": "Toy car",
+    "views": [
+      "front",
+      "side",
+      "top"
+    ],
+    "blurb": "The side picture makes the wheels round and the roof slope; front and top give the width.",
+    "tag": "3 pictures"
+  },
+  {
+    "id": "pawn",
+    "title": "Chess pawn",
+    "views": [
+      "front"
+    ],
+    "round": true,
+    "blurb": "One picture of a round piece, spun into a solid (One view: Round).",
+    "tag": "1 picture, round"
+  }
+]

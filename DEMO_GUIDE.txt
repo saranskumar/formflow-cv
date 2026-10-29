@@ -1,0 +1,258 @@
+=====================================================================
+FORMFLOW - DEMO GUIDE (running, viewing and showing the output)
+Course: Introduction to Computer Vision        Presented by: Saran S Kumar / 453
+=====================================================================
+
+1. WHAT THE PROJECT IS
+----------------------
+FormFlow lets you sketch 3D scenes in the air with your hands, using only a
+webcam. It also builds an approximate 3D model from outlines drawn in Front,
+Side and Top views (a "visual hull").
+
+  Mode 1 - 3D Sketch       Draw curves and shapes directly in 3D with gestures.
+  Mode 2 - 3-Plane Hull    Draw closed outlines in two or three views (or add a
+                           photo of the object); the 3D shape builds itself.
+
+No model is trained. Only the hand landmark detector (MediaPipe) is pre-built.
+Everything else (gestures, smoothing, reconstruction, meshing) is our own code.
+
+Project folders:
+  code/            the application (web app + Python server + tests)
+  code/README.md   full technical README
+  Presentation/    final.html (the slides), ppt.html (idea slides)
+  docs/            idea brief, PRD, architecture, pipeline
+  code/exports/    saved OBJ / STL files appear here
+
+
+2. BEFORE YOU START (checklist)
+-------------------------------
+  [ ] Windows laptop/PC with a working webcam
+  [ ] Python 3.12 installed (python.org). Tick "Add to PATH" when installing.
+  [ ] Google Chrome or Microsoft Edge (needed for camera and WebGL)
+  [ ] Good, even lighting; plain background if possible
+  [ ] Sit about 40-80 cm from the camera so both hands are visible
+  [ ] Close other apps that use the camera (Zoom, Teams, etc.)
+  [ ] Internet only needed the FIRST time (to install Python packages).
+      The app itself works offline.
+
+
+3. START THE APP
+----------------
+Option A - one click (Windows):
+  1. Open the folder  D:\WORK\College\cv\code
+  2. Double-click  run.bat
+     First run: creates .venv and installs packages (1-2 minutes).
+  3. The browser opens http://127.0.0.1:8000 automatically.
+  4. Click "Allow" when the browser asks for the CAMERA.
+
+Option B - command line:
+  cd D:\WORK\College\cv\code
+  run.bat                          (default, port 8000)
+  run.bat --port 9000 --no-browser (other port, do not open the browser)
+
+Option C - manual (any OS):
+  cd code
+  python -m venv .venv
+  .venv\Scripts\activate           (macOS/Linux: source .venv/bin/activate)
+  pip install -r requirements.txt
+  python -m server
+  Then open http://127.0.0.1:8000 in Chrome or Edge.
+
+IMPORTANT: open the address http://127.0.0.1:8000 . Do NOT double-click
+index.html (file://), the camera will not work that way.
+
+To stop: close the black server window, or press Ctrl+C in it.
+
+
+4. FIRST SCREEN: PRACTICE MODE
+------------------------------
+The app first asks you to prove tracking works:
+  - Show your hand to the camera.
+  - Pinch (thumb + index finger touching) and hold ~0.5 second.
+  - Make a fist and hold ~0.5 second.
+While you do this it measures your open and pinched finger spacing and sets
+your PERSONAL pinch thresholds automatically. Then the workspace opens.
+
+Useful: the guide / help button in the app shows the full controls table.
+The Settings panel lets you choose dominant hand, distance (near / medium /
+far / auto) and sensitivity. Reach calibration (hold the hand at two opposite
+corners of your working area) is for far-away cameras or projectors.
+
+
+5. HAND GESTURES (what to do with your hands)
+---------------------------------------------
+  Drawing hand (default: right, cyan marker)
+    Pinch  thumb + index ........... draw a curve / place a shape / press a button
+    Grab   thumb + middle finger ... pick up and move an object
+  Navigation hand (left, magenta marker)
+    Fist + move .................... orbit (rotate) the camera
+    Peace sign + move .............. pan the camera
+  Both hands
+    Pinch with both, move apart / together ... zoom
+
+Placing a shape: choose the tool, pinch at the centre, drag outward, release.
+Mouse fallback (no camera needed to test the UI):
+    left button = pinch, Shift+left = grab, right = fist, middle = peace.
+
+
+6. KEYBOARD SHORTCUTS
+--------------------
+  Key            Action
+  1              Freehand
+  2 - 9          Shapes: line, rectangle, circle, cube, sphere,
+                 cylinder, cone, pyramid
+  0              Move
+  X              Scale
+  Q              Extrude (pull a closed outline out into a solid)
+  K              Cut (cut a pocket or hole into a solid)
+  + / -          Zoom
+  [  /  ]        Drawing depth (closer / farther)
+  J              Join / stitch lines (Y / N answers the prompt)
+  U              Make 3D (visual hull)
+  F / L / T      Front / Side / Top view (in 3-Plane Hull: open that view full screen; Esc goes back)
+  Z              Undo
+  C              Clear scene
+  I              Import a model
+  E              Export OBJ / STL
+  V              Reset view
+  H              Swap drawing/navigation hands
+  O              Demo gallery (ready-made photo sets: one click builds a 3D model)
+  D              Hand-detection diagnostics (with Save log)
+  (Exact table: code/web/js/core/controls.js, shown in the in-app guide.)
+
+
+7. DEMO SCRIPT (about 5 minutes) - what to do and say
+-----------------------------------------------------
+  Step 1  Start and practice mode (30 s)
+    Do: run.bat, allow the camera, pinch and fist.
+    Say: "Hand landmarks come from MediaPipe. We turn them into gestures with
+         palm-normalised ratios and hysteresis, so it works at any distance."
+
+  Step 2  Free 3D drawing (60 s)
+    Do: pick Freehand, pinch and draw a curve in the air. Release.
+    Say: "The pointer is smoothed with a One-Euro filter, and a grasp latch
+         makes the stroke start where I aimed, not where the fingers drifted."
+
+  Step 3  Shapes and editing (45 s)
+    Do: press 5 (cube): pinch, drag out, release. Then 6 (sphere).
+        Use Grab (thumb + middle) to move one. Press Z to undo.
+    Say: "Solids are convex meshes with outward winding, ready to export."
+
+  Step 4  Camera control (30 s)
+    Do: make a fist with the other hand and move to orbit; peace sign to pan;
+        pinch with both hands and spread them to zoom.
+    Say: "Navigation is on the second hand so drawing and viewing never clash."
+
+  Step 5  Join lines (30 s)
+    Do: draw a loop that almost closes. A prompt appears: pinch Join (or press J).
+    Say: "Hands never land exactly on the start; the app finds near ends and
+         closes the loop. The hull needs closed outlines."
+
+  Step 6  Multi-view reconstruction - the main feature (90 s)
+    Do: switch to the 3-Plane Hull mode. Draw a closed outline in the FRONT cell
+        (for example a rectangle), then another in the SIDE cell. The 3D
+        PREVIEW cell builds the shape by itself. Add a TOP outline for a
+        tighter result. Or press "Photos -> 3D" and pick up to three photos
+        (front, side, top) of one object: the outlines are found and the 3D
+        model is built in one step. For a bottle or cup, one front photo with
+        "One view: Round" spins it into a round solid.
+    Say: "Each outline is a silhouette. We rasterise them, intersect the three
+         extruded volumes in a 64-cube voxel grid (visual hull), keep the
+         largest piece, and make a smooth mesh with surface nets. If views
+         disagree by more than the tolerance we warn instead of guessing."
+    Show: the warning/score text (per-view IoU) and the triangle count.
+
+  Step 7  Export and view the file (45 s)
+    Do: press E (or use the Export STL button). The toast confirms the saved files.
+        Open  code\exports  in File Explorer: formflow_<time>.obj and .stl.
+        Open the STL in Windows 3D Viewer, Blender, MeshLab or a slicer.
+    Say: "Exports go over a WebSocket to the Python backend, which writes the
+         exact bytes. STL is binary, OBJ is text."
+
+
+8. HOW TO VIEW THE OUTPUT
+-------------------------
+  Live:     the browser window (3D scene, camera feed, HUD, hand markers).
+  Files:    D:\WORK\College\cv\code\exports\
+              formflow_YYYYMMDDHHMMSS.obj   text mesh
+              formflow_YYYYMMDDHHMMSS.stl   binary mesh
+            Samples from earlier runs are already in that folder.
+  Viewers:  Windows "3D Viewer", Blender (File > Import > Wavefront/STL),
+            MeshLab, or any 3D-printing slicer.
+  Re-import: drag an .obj/.stl onto the page, or press I. Files placed in
+            code\imports\ (create the folder) are listed for gesture users.
+  Slides:   open  Presentation\final.html  in Chrome/Edge.
+            Arrow keys / Space = next, F = fullscreen, P = print / save PDF.
+  Diagnostics: the in-app diagnostics panel shows tracking state and frame rate.
+
+
+9. RUN THE TESTS (to show the code is verified)
+-----------------------------------------------
+  cd D:\WORK\College\cv\code
+  run.bat test
+or separately:
+  .venv\Scripts\python.exe -m pytest -q          -> 21 tests pass
+  cd web
+  node --test "test/*.test.mjs"                  -> 188 tests pass (Node.js)
+Tests cover gestures, hand tracking, the sketch engine, visual hull (L bracket,
+box, crossed cylinders), stitching, silhouette tracing, OBJ/STL round trip and
+the server (static files, calibration, export, path-traversal blocking).
+
+
+10. HOW IT WORKS - ONE PARAGRAPH PER STAGE (for questions)
+----------------------------------------------------------
+  1 Capture     Webcam frame -> optional zoom-and-follow crop around the hands
+                (square ROI, 9 palm sizes) so small distant hands are detected.
+  2 Detect      MediaPipe Hand Landmarker gives 21 landmarks per hand (image
+                and metric 3D). Optional Pose Landmarker gives wrist/elbow.
+  3 Track       Remove duplicate detections, keep identity by position, vote on
+                left/right, require 3 frames to accept a hand, hold 0.25 s if
+                lost, ignore smaller bystander hands.
+  4 Gesture     palm = |wrist - middle knuckle|; rI = |thumb - index| / palm;
+                rM = |thumb - middle| / palm. Pinch when rI < 0.30 (release at
+                0.45), grab uses rM, fist = all fingertips closer to wrist than
+                their middle joints, peace = index+middle extended.
+  5 Cursor      One-Euro filter (cutoff rises with speed), cursor anchored to
+                the palm, glitch rejection (jump > 0.18), grasp latch.
+  6 Map         Reach region -> full screen with equal speed on both axes.
+  7 Sketch      Orbit camera (FOV 40.6 deg), ray unprojection onto a drawing
+                plane, segment picking, undo log, convex solid primitives.
+  8 Hull        Classify outline plane -> align shared dimensions -> even-odd
+                scanline raster -> voxel AND of the 3 masks -> largest
+                connected component -> IoU re-projection score.
+  9 Mesh        Pad grid, [1 4 1]/6 blur on each axis, iso 0.5, one vertex per
+                mixed cell, quads on sign-changing edges -> triangles.
+ 10 Export      ASCII OBJ (5 decimals) and binary STL via the Python backend.
+
+  Limits: a visual hull cannot recover concave parts or hidden features; the
+  result is an approximate prototype for ideation, not manufacturing CAD.
+
+
+11. TROUBLESHOOTING
+-------------------
+  Black / no camera       Use Chrome or Edge, open http://127.0.0.1:8000 (not a
+                          file), click Allow, close other camera apps.
+  Hand not detected       Keep Settings > Light correction on Auto (it brightens
+                          a hand that is dark against a window or lamp). Laptop
+                          webcam: Distance = Near. Small hands: Sensitivity high.
+                          Press D to see the light-correction level and dropouts.
+  Pinch triggers by itself / not at all
+                          Repeat practice mode so personal thresholds are
+                          re-measured; keep the hand facing the camera.
+  Cursor jumpy            Increase smoothing in Settings.
+  "Port already in use"   run.bat --port 9000
+  Export does not save    Check the server window is still running. The link
+                          indicator in the HUD shows if the backend is online.
+  Python not found        Install Python 3.12 and re-run run.bat.
+  Slow / low frame rate   Close other tabs, plug in the laptop, use Chrome with
+                          hardware acceleration on (GPU delegate is preferred).
+
+
+12. BACKUP PLAN IF THE CAMERA FAILS DURING THE PRESENTATION
+-----------------------------------------------------------
+  - Use the mouse: left = pinch (draw), Shift+left = grab, right = fist
+    (orbit), middle = peace (pan). Every feature works with the mouse.
+  - Show the saved samples in code\exports\ and open them in a 3D viewer.
+  - Show Presentation\final.html slides and the test run (run.bat test).
+
+=====================================================================
