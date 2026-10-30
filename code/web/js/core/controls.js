@@ -23,6 +23,7 @@ export const CONTROLS = [
   { id: 'photo', action: 'Make a 3D shape from photos', hand: null, gesture: 'Add photo on two or three views: the outline is found automatically', key: 'U', button: 'View toolbar: Add photo · Auto · Object: Auto / Dark / Light, then Make 3D' },
   { id: 'views', action: 'Look straight at the Front, Side or Top', hand: null, gesture: '', key: 'F · L · T', button: 'Visual hull panel' },
   { id: 'hull', action: 'Make a 3D shape from outlines (visual hull)', hand: null, gesture: 'Draw closed outlines in two or three views, then press Make 3D', key: 'U', button: 'Visual hull' },
+  { id: 'straight', action: 'Auto-straight: nearly straight freehand strokes become straight lines', hand: null, gesture: '', key: 'A', button: 'Auto-straight (a toggle)' },
   { id: 'undo', action: 'Undo', hand: null, gesture: '', key: 'Z', button: 'Undo' },
   { id: 'clear', action: 'Clear the scene', hand: null, gesture: '', key: 'C', button: 'Clear scene' },
   { id: 'models', action: 'Test the hand and arm models on this computer (speed and detection)', hand: null, gesture: 'Press Models in the top bar, then Test', key: 'M', button: 'Models' },

@@ -674,6 +674,7 @@ function perform(cmd, arg) {
     case 'exportSTL': exportScene('stl'); break;
     case 'depthUp': sketch.stepDepth(1); hud.toast(`Drawing depth ${sketch.depth.toFixed(1)} (closer)`); break;
     case 'depthDown': sketch.stepDepth(-1); hud.toast(`Drawing depth ${sketch.depth.toFixed(1)} (farther)`); break;
+    case 'straight': setAutoStraight(!sketch.autoStraight); break;
     case 'snap': sketch.snap = !sketch.snap; hud.setActive('snap', sketch.snap); hud.toast(`Snap ${sketch.snap ? 'on' : 'off'}`); break;
     case 'resetView': sketch.resetView(); break;
     case 'zoomIn': sketch.zoom(0.8); break;
@@ -711,7 +712,7 @@ window.addEventListener('keydown', (e) => {
   if (k in tools) perform('tool', tools[k]);
   else {
     if (e.key === 'Delete' || e.key === 'Backspace') return perform('delete');
-  const map = { z: 'undo', c: 'clear', e: 'exportOBJ', i: 'import', v: 'resetView', '[': 'depthDown', ']': 'depthUp', g: 'help', h: 'swap', ',': 'settings', j: 'join', u: 'hull', p: 'mode', o: 'demo', m: 'models', d: 'diagnostics', f: 'viewFront', l: 'viewSide', t: 'viewTop', s: 'snap', '+': 'zoomIn', '=': 'zoomIn', '-': 'zoomOut' };
+  const map = { z: 'undo', c: 'clear', e: 'exportOBJ', i: 'import', v: 'resetView', '[': 'depthDown', ']': 'depthUp', g: 'help', h: 'swap', ',': 'settings', j: 'join', u: 'hull', p: 'mode', o: 'demo', m: 'models', d: 'diagnostics', f: 'viewFront', l: 'viewSide', t: 'viewTop', s: 'snap', a: 'straight', '+': 'zoomIn', '=': 'zoomIn', '-': 'zoomOut' };
     if (map[k]) perform(map[k]);
   }
 });
@@ -1123,6 +1124,15 @@ function tick(tms) {
 }
 
 /** Buttons that would do nothing are greyed out, so what can be pressed is clear at a glance. */
+/** The Auto-straight button: freehand strokes that are nearly straight become exact lines. Remembered between visits. */
+function setAutoStraight(on, quiet = false) {
+  sketch.autoStraight = on;
+  hud.setActive('straight', on);
+  try { localStorage.setItem('formflow.autoStraight', on ? '1' : '0'); } catch { /* private window */ }
+  if (!quiet) hud.toast(on ? 'Auto-straight on: a freehand stroke that is nearly straight becomes a straight line.' : 'Auto-straight off: freehand strokes stay as you draw them.', 'ok');
+}
+try { if (localStorage.getItem('formflow.autoStraight') === '1') setAutoStraight(true, true); } catch { /* private window */ }
+
 function refreshAvailability() {
   const items = sketch.items, solids = items.some((it) => it.volumetric);
   hud.setEnabled('undo', sketch.ops.length > 0);

@@ -28,14 +28,14 @@ const ACTION_GROUPS = [
   ['build', 'Build', [['join', '⛓', 'Join lines'], ['hull', '⬡', 'Visual hull'], ['photos', '🖼', 'Photos → 3D']]],
   ['file', 'File', [['import', '⇪', 'Import model'], ['exportOBJ', '⇩', 'Export OBJ'], ['exportSTL', '⇩', 'Export STL']]],
   ['depth', 'Depth', [['depthDown', '−', 'Depth −'], ['depthUp', '+', 'Depth +']]],
-  ['view', 'View', [['snap', '▦', 'Snap'], ['resetView', '⌂', 'Reset view'], ['camera', '◉', 'Camera']]],
+  ['view', 'View', [['snap', '▦', 'Snap'], ['straight', '╱', 'Auto-straight'], ['resetView', '⌂', 'Reset view'], ['camera', '◉', 'Camera']]],
 ];
 const NAV_ACTIONS = [['models', '🧪', 'Models'], ['demo', '▶', 'Demo'], ['settings', '⚙', 'Settings'], ['help', '?', 'Guide']]; // top right, next to the status chips
 
 // The keyboard key of every button, shown on the button and in its tooltip, so the shortcuts can be learned by using the app
 const KEYS = {
   tool: { free: '1', line: '2', rect: '3', circle: '4', cube: '5', sphere: '6', cylinder: '7', cone: '8', pyramid: '9', move: '0', scale: 'X', extrude: 'Q', cut: 'K' },
-  action: { undo: 'Z', delete: 'Del', clear: 'C', join: 'J', hull: 'U', import: 'I', exportOBJ: 'E', resetView: 'V', depthDown: '[', depthUp: ']', snap: 'S', settings: ',', help: 'G', demo: 'O', models: 'M' },
+  action: { undo: 'Z', delete: 'Del', clear: 'C', join: 'J', hull: 'U', import: 'I', exportOBJ: 'E', resetView: 'V', depthDown: '[', depthUp: ']', snap: 'S', straight: 'A', settings: ',', help: 'G', demo: 'O', models: 'M' },
 };
 
 const el = (tag, cls, html = '') => { const e = document.createElement(tag); if (cls) e.className = cls; e.innerHTML = html; return e; };

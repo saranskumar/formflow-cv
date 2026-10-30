@@ -40,6 +40,9 @@ Webcam ─► MediaPipe hand landmarks ─► tracker (stabilise, pick user's ha
   (a ring fills) and then move to draw. The mouse draws at once.
 - **Scrolling without a wheel**: long panels (Settings, Models, Demo, the guide) get big ▲ ▼ buttons with a page counter,
   can be dragged with a pinch, and keep their place when you change a setting. Settings has a section menu at the top.
+- **Auto-straight** (button in the bottom bar next to Snap, key `A`; off by default, remembered): a freehand stroke that is
+  nearly straight (long enough, close to the line between its ends, not a loop or zigzag) becomes an exact straight line,
+  and is shown straight while you draw. Switch it off and strokes stay as drawn. Curves and shapes are never touched.
 - **Point and hold**: with the index finger out (others curled) at a button, a ring fills for 0.8 s and the button is
   pressed. A pinch still presses at once.
 - **Smooth navigation**: zoom, pan and the Front / Side / Top / Reset view moves glide instead of jumping.

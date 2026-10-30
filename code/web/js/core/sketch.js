@@ -20,6 +20,9 @@ export const STROKE_SPACING = 0.03;
 export const DEPTH_PER_PX = 0.005; // Extrude / Cut: world units of depth per pixel dragged up
 export const MAX_DEPTH = 2.4;
 export const MIN_DEPTH = 0.03;
+export const STRAIGHT_MIN = 0.15;   // a stroke shorter than this is never straightened
+export const STRAIGHT_BEND = 0.05;   // ... and it may stray from its chord by this share of the chord (at least 0.015)
+export const STRAIGHT_PATH = 1.3;    // ... and be no longer than this many chords (a zigzag or a loop is not a line)
 export const CUT_RESOLUTION = 80; // grid cells along the longest side of a mesh being cut
 export const CUT_LIFT = 0.05; // the cutter starts this far in front of the outline, so it opens through a face lying on it
 export const FOCAL_PER_HEIGHT = 1.35;
@@ -30,6 +33,24 @@ function segDist(px, py, a, b) {
   const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
   const t = l2 ? clamp(((px - a.x) * dx + (py - a.y) * dy) / l2, 0, 1) : 0;
   return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy));
+}
+
+/**
+ * Auto-straight: is this freehand stroke meant to be a straight line? Returns its two end points, or null. A stroke counts
+ * when it is long enough, stays close to the chord between its ends, and does not wander (a loop or zigzag is a shape).
+ */
+export function straightEnds(pts) {
+  if (pts.length < 2) return null;
+  const a = pts[0], b = pts[pts.length - 1], chord = sub(b, a), L = len(chord);
+  if (L < STRAIGHT_MIN) return null;
+  const u = mul(chord, 1 / L);
+  let path = 0, dev = 0;
+  for (let i = 1; i < pts.length; i++) path += len(sub(pts[i], pts[i - 1]));
+  for (const p of pts) {
+    const v = sub(p, a), t = clamp(dot(v, u), 0, L);
+    dev = Math.max(dev, len(sub(v, mul(u, t))));
+  }
+  return dev <= Math.max(0.015, STRAIGHT_BEND * L) && path <= STRAIGHT_PATH * L ? [a.slice(), b.slice()] : null;
 }
 
 export class Sketch {
@@ -45,6 +66,7 @@ export class Sketch {
     this.target = [0, 0, 0];
     this.depth = 0;
     this.snap = false;
+    this.autoStraight = false; // freehand strokes that are nearly straight become exact straight lines (the button in the bottom bar)
     // smooth navigation (main.js turns it on): zoom, pan and view changes glide to where they are going instead of jumping
     this.smooth = false;
     this.zoomGoal = this.dist; this.panGoal = [0, 0, 0]; this.tw = null; this._gt = null;
@@ -413,7 +435,10 @@ export class Sketch {
 
   preview() {
     if (this.op) return this._opShape();
-    if (this.active && this.active.length > 1) return new Poly('free', this.active);
+    if (this.active && this.active.length > 1) {
+      const ends = this.autoStraight && this.mode === 'free' ? straightEnds(this.active) : null; // shown straight while you draw: what you see is what you get
+      return ends ? new Poly('line', ends) : new Poly('free', this.active);
+    }
     if (this.anchor && this.cursor) {
       const { right, up } = this.cellView ? PLANE_VIEWS[this.cellView] : this.basis();
       return buildItem(this.mode, this.anchor, this.cursor, right, up);
@@ -444,7 +469,10 @@ export class Sketch {
         const kept = pts.filter((_, i) => this.times[i] <= now - trim);
         if (kept.length >= 2) pts = kept;
       }
-      if (pts.length >= 2) item = new Poly('free', this.snap ? pts : normalizePolyline(pts, STROKE_SPACING));
+      if (pts.length >= 2) {
+        const ends = this.autoStraight && this.mode === 'free' ? straightEnds(pts) : null;
+        item = ends ? new Poly('line', ends) : new Poly('free', this.snap ? pts : normalizePolyline(pts, STROKE_SPACING));
+      }
     } else if (this.anchor) {
       const final = this.cursor;
       if (trim > 0 && this.cursorHist.length) {
