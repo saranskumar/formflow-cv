@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MODELS, NOT_INSTALLED, summarize, describe, advice, extract } from '../js/core/benchmark.js';
+import { MODELS, NOT_INSTALLED, summarize, describe, advice, extract, holisticAsHands } from '../js/core/benchmark.js';
 
 test('a summary has the mean, the 95th percentile, the worst run, the rate it allows and the share that found something', () => {
   const r = summarize([10, 10, 10, 10, 10, 10, 10, 10, 10, 50], 6);
@@ -38,7 +38,7 @@ test('no hand in view is called out, so a slow-looking result is not blamed on t
 });
 
 test('every model is an official MediaPipe file, either shipped with the app or fetched from Google on test', () => {
-  assert.deepEqual(MODELS.map((m) => m.id), ['hand-gpu', 'hand-cpu', 'hand-640', 'gesture-gpu', 'holistic-gpu', 'pose-gpu', 'pose-cpu', 'pose-full', 'pose-heavy']);
+  assert.deepEqual(MODELS.map((m) => m.id), ['hand-gpu', 'hand-cpu', 'hand-640', 'gesture-gpu', 'holistic-gpu']);
   for (const m of MODELS) {
     assert.ok(['hand', 'gesture', 'holistic', 'pose'].includes(m.api) && ['GPU', 'CPU'].includes(m.delegate), m.id);
     assert.ok(m.file ? /\.task$/.test(m.file) : m.url.startsWith('https://storage.googleapis.com/mediapipe-models/') && m.url.endsWith('.task'), m.id);
@@ -64,4 +64,14 @@ test('the result of each task is read into the same shape, and a gesture name co
   assert.equal(h.hands.length, 1);
   assert.equal(h.pose.length, 1);
   assert.deepEqual(extract('hand', null), { hands: [], pose: [], label: '' });
+});
+
+test('a Holistic result can stand in for a Hand Landmarker result, with the sides as the tracker expects them', () => {
+  const pt = (x) => ({ x, y: 0.5 });
+  const r = holisticAsHands({ leftHandLandmarks: [[pt(0.7)]], rightHandLandmarks: [[pt(0.3)]], poseLandmarks: [[pt(0.5)]] });
+  assert.equal(r.landmarks.length, 2);
+  assert.deepEqual(r.handedness.map((h) => h[0].categoryName), ['Right', 'Left']);
+  assert.deepEqual(r.worldLandmarks, []);
+  assert.deepEqual(holisticAsHands({ leftHandLandmarks: [], rightHandLandmarks: [[pt(0.3)]] }).landmarks.length, 1);
+  assert.deepEqual(holisticAsHands(null), { landmarks: [], handedness: [], worldLandmarks: [] });
 });

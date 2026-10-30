@@ -1,6 +1,6 @@
 """Download the extra MediaPipe models into web/vendor/models/ so every model in the Models panel works offline.
 
-    python tools/download_models.py            # downloads what is missing (about 62 MB)
+    python tools/download_models.py            # downloads what is missing (about 22 MB)
     python tools/download_models.py --list     # shows what is there
 
 The files are the official ones from Google's model storage (the same addresses the Models panel uses). They are not
@@ -15,8 +15,6 @@ GS = "https://storage.googleapis.com/mediapipe-models"
 MODELS = {
     "gesture_recognizer.task": f"{GS}/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
     "holistic_landmarker.task": f"{GS}/holistic_landmarker/holistic_landmarker/float16/latest/holistic_landmarker.task",
-    "pose_landmarker_full.task": f"{GS}/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
-    "pose_landmarker_heavy.task": f"{GS}/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
 }
 DEST = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "vendor", "models")
 

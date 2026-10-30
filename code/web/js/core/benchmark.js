@@ -16,10 +16,6 @@ export const MODELS = [
   { id: 'hand-640', api: 'hand', kind: 'hand', title: 'Hand Landmarker, smaller picture', delegate: 'GPU', file: 'hand_landmarker.task', size: '7.8 MB', picture: 640, what: 'the same model, given a 640-pixel copy of each camera picture (less to upload)' },
   { id: 'gesture-gpu', api: 'gesture', kind: 'hand', title: 'Gesture Recognizer', delegate: 'GPU', url: `${GS}/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task`, local: 'models/gesture_recognizer.task', size: '8.4 MB', what: 'hand points plus a name for the gesture (open palm, pointing, victory...)' },
   { id: 'holistic-gpu', api: 'holistic', kind: 'hand', title: 'Holistic Landmarker', delegate: 'GPU', url: `${GS}/holistic_landmarker/holistic_landmarker/float16/latest/holistic_landmarker.task`, local: 'models/holistic_landmarker.task', size: '13.7 MB', what: 'both hands, body and face in one model (heavier)' },
-  { id: 'pose-gpu', api: 'pose', kind: 'pose', title: 'Pose Landmarker (lite)', delegate: 'GPU', file: 'pose_landmarker_lite.task', size: '5.8 MB', what: 'arm and wrist, used to help find small or lost hands (the one the app uses)' },
-  { id: 'pose-cpu', api: 'pose', kind: 'pose', title: 'Pose Landmarker (lite)', delegate: 'CPU', file: 'pose_landmarker_lite.task', size: '5.8 MB', what: 'the same model on the processor' },
-  { id: 'pose-full', api: 'pose', kind: 'pose', title: 'Pose Landmarker (full)', delegate: 'GPU', url: `${GS}/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task`, local: 'models/pose_landmarker_full.task', size: '9.4 MB', what: 'a more accurate body model than lite' },
-  { id: 'pose-heavy', api: 'pose', kind: 'pose', title: 'Pose Landmarker (heavy)', delegate: 'GPU', url: `${GS}/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task`, local: 'models/pose_landmarker_heavy.task', size: '30.7 MB', what: 'the most accurate body model, and the slowest' },
 ];
 
 /** Models that could be tried but are not available in the browser tasks used here: shown so it is clear what exists. */
@@ -64,6 +60,22 @@ export function extract(api, r) {
   out.hands = r.landmarks || [];
   if (api === 'gesture' && r.gestures && r.gestures.length) out.label = r.gestures.map((g) => g[0] && g[0].categoryName).filter((n) => n && n !== 'None').join(', ');
   return out;
+}
+
+/**
+ * A Holistic result in the shape the app's hand tracking reads (the shape of a Hand Landmarker result), so it can be used as
+ * the live hand model: points and left/right for each hand it sees. It gives no 3D hand points, which the app copes with.
+ * The tracker expects the label from the camera's side of the picture, which is the opposite of the person's own left/right.
+ */
+export function holisticAsHands(r) {
+  const landmarks = [], handedness = [];
+  if (!r) return { landmarks, handedness, worldLandmarks: [] };
+  const one = (v) => (Array.isArray(v) ? (Array.isArray(v[0]) ? v[0] : v) : null);
+  for (const [list, label] of [[r.leftHandLandmarks, 'Right'], [r.rightHandLandmarks, 'Left']]) {
+    const h = one(list);
+    if (h && h.length) { landmarks.push(h); handedness.push([{ categoryName: label, score: 1 }]); }
+  }
+  return { landmarks, handedness, worldLandmarks: [] };
 }
 
 /**

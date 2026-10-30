@@ -67,6 +67,9 @@ export class SettingsPanel {
       <section><h4>Distance from the camera</h4>
         ${seg('range', RANGE_OPTIONS, s.range)}
         <p class="help">${RANGE_HELP[s.range]}</p></section>
+      <section><h4>Smooth movement</h4>
+        ${seg('steady', [['off', 'Off'], ['normal', 'Normal'], ['high', 'Extra smooth']], s.steady)}
+        <p class="help">Calms the shake of the hand and cursor and fills in between the detector's updates. Extra smooth is steadier but follows a little later.</p></section>
       <section><h4>Hand detection</h4>
         ${seg('sensitivity', SENS_OPTIONS, s.sensitivity)}
         <p class="help">High sensitivity finds smaller, fainter hands but may pick up more false hands.</p></section>

@@ -32,7 +32,7 @@ Other platforms, options, controls, API and troubleshooting: see **[code/README.
 - **Photos to 3D**: front, side and top photos (or drawings) become a closed 3D model; one photo of a round object is
   spun into a solid. Open any view full screen to work on it.
 - **Demo gallery**: nine ready-made picture sets (rocket, house, castle, robot, airplane, car, vase, pawn, a pencil head).
-- **Models**: test the hand and arm models on your own camera and switch the one the app uses.
+- **Models**: test the hand models on your own camera and switch the one the app uses.
 - **Light and camera help**: brightens a dark or backlit hand, asks the camera for a faster shutter, says what to fix.
 - Import and export OBJ / STL; keyboard shortcuts and a mouse fallback; a neutral light interface.
 

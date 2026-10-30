@@ -27,14 +27,14 @@ Webcam ─► MediaPipe hand landmarks ─► tracker (stabilise, pick user's ha
   file name (`mug_side.jpg`) or in that order, its outline is found automatically (works on unevenly lit, noisy
   backgrounds), and the 3D model is built straight away. One photo of a round object (bottle, vase, cup) can be spun
   into a solid with **One view: Round**.
-- **Models** (top bar → **Models**, or key `M`): lists every MediaPipe hand and body model that runs in the browser: the
-  Hand Landmarker (graphics card, processor, or a smaller camera picture), the Gesture Recognizer, the Holistic
-  Landmarker and the Pose Landmarker (lite, full, heavy). **Test** runs one on about 3 seconds of live camera pictures and
+- **Models** (top bar → **Models**, or key `M`): lists the MediaPipe hand models that run in the browser: the
+  Hand Landmarker (graphics card, processor, or a smaller camera picture), the Gesture Recognizer and the Holistic
+  Landmarker. **Test** runs one on about 3 seconds of live camera pictures and
   shows the time per picture, the frame rate it allows and whether it found a hand; a live picture beside the table shows
   the points the model finds. **Use** switches the model that tracks your hands (remembered). Models marked "downloaded
   when tested" come from Google's model storage the first time and are cached by the browser; nothing else leaves your
   computer. If a chosen model cannot start, the app falls back to the standard one. To have every model on disk (works
-  offline, about 62 MB, not stored in git) run `python tools/download_models.py` once; they go to `web/vendor/models/`.
+  offline, about 22 MB, not stored in git) run `python tools/download_models.py` once; they go to `web/vendor/models/`.
 - **Pinch to click, pinch and hold to draw**: a quick pinch (a tap) presses a button or selects the object under your
   fingers (it gets a blue outline; **Delete** or the `Del` key removes it, Undo brings it back). Hold the pinch a moment
   (a ring fills) and then move to draw. The mouse draws at once.

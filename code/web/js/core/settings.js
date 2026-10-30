@@ -12,6 +12,7 @@ export const DEFAULTS = {
   smoothing: 1.0,
   forearm: true, // also track the forearm (pose model) to keep hold of small or briefly lost hands
   light: true, // brighten the picture the detector sees when the hand is dark (backlight, dim room); see core/enhance.js
+  steady: 'normal', // how much the hand and cursor are smoothed on screen: off | normal | high (core/smooth.js)
   askJoin: true, // after a freehand stroke, offer to close the loop / join it to a nearby line
 };
 
@@ -57,6 +58,7 @@ export function normalizeSettings(raw) {
   if (typeof s.forearm !== 'boolean') s.forearm = DEFAULTS.forearm;
   if (typeof s.light === 'string') s.light = s.light === 'true';
   if (typeof s.light !== 'boolean') s.light = DEFAULTS.light;
+  if (!['off', 'normal', 'high'].includes(s.steady)) s.steady = DEFAULTS.steady;
   if (typeof s.askJoin === 'string') s.askJoin = s.askJoin === 'true'; // from a segmented control
   if (typeof s.askJoin !== 'boolean') s.askJoin = DEFAULTS.askJoin;
   return s;

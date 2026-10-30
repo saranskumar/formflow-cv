@@ -36,8 +36,9 @@ import { HullPanel } from './ui/hullpanel.js';
 import { HullWorker } from './ui/hullworker.js';
 import { DemoPanel } from './ui/demo.js';
 import { ScrollFab } from './ui/scroll.js';
+import { Follower, LandmarkFollower } from './core/smooth.js';
 import { ModelLab } from './ui/modellab.js';
-import { MODELS, summarize, extract } from './core/benchmark.js';
+import { MODELS, summarize, extract, holisticAsHands } from './core/benchmark.js';
 import { Bridge, toBase64 } from './bridge.js';
 
 const $ = (id) => document.getElementById(id);
@@ -814,14 +815,19 @@ function saveSessionLog() {
 let visionFileset = null, benchmarking = false;
 
 // Which model tracks the hands: chosen in the Models panel, remembered between visits. Only models that give hand points can be used.
-const HAND_IDS = ['hand-gpu', 'hand-cpu', 'hand-640', 'gesture-gpu'];
+const HAND_IDS = MODELS.map((m) => m.id); // every model in the list can be used
 const readHandModel = () => { try { const id = localStorage.getItem('formflow.handModel'); return HAND_IDS.includes(id) ? id : null; } catch { return null; } };
 let activeModel = readHandModel() || 'hand-gpu';
 let detectWidth = 0; // 0 = the camera's own size; a smaller number = a shrunken copy goes to the detector
 
 /** The Gesture Recognizer names its calls recognize(); the app calls every hand model detect(). */
-const adapt = (lm) => {
+const adapt = (lm, model) => {
   if (lm.recognizeForVideo) { lm.detectForVideo = (...a) => lm.recognizeForVideo(...a); lm.detect = (...a) => lm.recognize(...a); }
+  if (model.api === 'holistic') { // its result is turned into the shape of a hand result
+    const video = lm.detectForVideo.bind(lm), still = lm.detect.bind(lm);
+    lm.detectForVideo = (img, ts) => holisticAsHands(video(img, ts));
+    lm.detect = (img) => holisticAsHands(still(img));
+  }
   return lm;
 };
 
@@ -835,7 +841,7 @@ async function startTracker() {
     });
     const order = model.delegate === 'CPU' ? ['CPU'] : ['GPU', 'CPU']; // no graphics-card support: fall back to the processor
     for (const d of order) {
-      try { const lm = adapt(await FACTORY[model.api].createFromOptions(fileset, opts(d))); sessionLog.setMeta({ delegate: d, handModel: model.id }); detectWidth = model.picture || 0; return lm; }
+      try { const lm = adapt(await FACTORY[model.api].createFromOptions(fileset, opts(d)), model); sessionLog.setMeta({ delegate: d, handModel: model.id }); detectWidth = model.picture || 0; return lm; }
       catch (e) { if (d === order[order.length - 1]) throw e; }
     }
   };
@@ -981,9 +987,25 @@ function processResult(result, t, roi = FULL) {
   infer.mode = trackerMode || '';
 }
 
+// What is shown and drawn with is smoothed at screen rate (core/smooth.js): the detector's updates are few and a little noisy
+const STEADY = { off: 0, normal: 1, high: 1.7 };
+const PX = { near: 2.5, far: 45 }; // the cursor is in screen pixels
+const smoothers = Object.fromEntries(['main', 'second'].map((r) => [r, { lm: new LandmarkFollower(), pos: new Follower(PX), ctr: new Follower(PX) }]));
+const shown = { main: null, second: null };
+
+function smoothHands(t) {
+  const k = STEADY[settings.steady] ?? 1;
+  for (const role of ['main', 'second']) {
+    const l = last[role], sm = smoothers[role];
+    if (!l || t - seen[role] > 0.25) { sm.lm.reset(); sm.pos.reset(); sm.ctr.reset(); shown[role] = null; continue; }
+    const [x, y] = sm.pos.follow([l.frame.x, l.frame.y], t, k), [cx, cy] = sm.ctr.follow([l.frame.cx, l.frame.cy], t, k);
+    shown[role] = { lm: sm.lm.follow(l.lm, t, k), frame: { ...l.frame, x, y, cx, cy }, reading: l.reading };
+  }
+}
+
 function handFrames(t) { // a brief dropout must not end a stroke
   const f = {};
-  for (const role of ['main', 'second']) f[role] = last[role] && t - seen[role] < 0.25 ? last[role].frame : null;
+  for (const role of ['main', 'second']) f[role] = shown[role] ? shown[role].frame : null;
   return f;
 }
 
@@ -1045,6 +1067,7 @@ function tick(tms) {
   if (reachCal) stepReach(t);
   if (joinPrompt.open && sketch.busy) dismissJoin(); // starting something new answers 'no'
   if (!joinPrompt.open && sketch.joinHint) sketch.joinHint = null;
+  smoothHands(t);
   const hands = testClock === null ? handFrames(t) : { main: null, second: null };
   const handActive = !!(hands.main || hands.second);
 
@@ -1121,8 +1144,8 @@ function drawHands(t) {
   const vw = video.videoWidth || 1280, vh = video.videoHeight || 720;
   let hover = null;
   for (const role of ['main', 'second']) {
-    const l = last[role];
-    if (!l || t - seen[role] > 0.25) continue;
+    const l = shown[role];
+    if (!l) continue;
     overlay.skeleton(l.lm, role, vw, vh, l.reading);
     const f = l.frame, nav = f.fist || f.peace;
     const [x, y] = nav ? [f.cx, f.cy] : [f.x, f.y];
