@@ -15,6 +15,7 @@ export const FREEZE_AFTER_RELEASE = 0.3; // s: input ignored after a hand releas
 export const TRIM_DRAW = 0.10;
 export const TRIM_DRAG = 0.15;
 export const DWELL_S = 0.8;     // s: point at a button this long and it is pressed
+export const HOLD_DRAW_S = 0.22; // s: a pinch is held this long before a stroke or shape starts; a quicker pinch is a click
 export const DWELL_GRACE = 0.2; // s: the fingertip may stray off the button this long without starting over
 
 export class Controller {
@@ -38,6 +39,8 @@ export class Controller {
     this.nav = { kind: null, last: null }; // orbit / pan source tracking
     this.prev = { pinch: false, grab: false };
     this.events = []; // human-readable log of what happened, for the status line
+    this.hold = { t0: null, x: 0, y: 0, progress: 0 }; // a pinch in the scene that may turn into a stroke (hold) or a click (tap)
+    this.scroll = null; // a pinch that started on a panel and is dragging it
     this.dwell = { el: null, t0: 0, lastOn: -Infinity, fired: false, progress: 0 }; // point-and-hold on a button
   }
 
@@ -121,6 +124,7 @@ export class Controller {
 
     if (!main) {
       this._dwell(null, null, now, false);
+      this.hold = { t0: null, x: 0, y: 0, progress: 0 }; this.scroll = null;
       if (this.gesture) { this.gesture = null; s.cancel(); }
       this.prev = { pinch: false, grab: false };
       return;
@@ -132,19 +136,40 @@ export class Controller {
     const onHud = !!this.ui.hit(main.x, main.y);
     const risingPinch = main.pinch && !this.prev.pinch;
 
-    if (risingPinch && onHud && !frozen) { // pressing a HUD button is always an intentional pinch (or click)
-      this.ui.press(this.ui.hit(main.x, main.y));
+    const isHand = main.source === 'hand';
+    if (risingPinch && onHud && !frozen) {
+      const el = this.ui.hit(main.x, main.y);
+      if (el && el.tagName && el.tagName !== 'BUTTON' && this.ui.scrollBy) this.scroll = { y: main.y }; // a pinch on the panel itself: drag to scroll it
+      else this.ui.press(el); // a pinch on a button is a click
       this.consumed = true;
     }
-    if (!main.pinch) this.consumed = false;
+    if (this.scroll && main.pinch) { const dy = this.scroll.y - main.y; this.scroll.y = main.y; if (dy) this.ui.scrollBy(main.x, main.y, dy); }
+    if (!main.pinch) { this.consumed = false; this.scroll = null; }
     this._dwell(main, grasp, now, frozen);
 
     if (!this.gesture) {
-      if (grasp && !frozen && !this.consumed && !onHud && (grasp !== this.prevGrasp)) {
-        const mode = grasp === 'grab' ? 'move' : s.tool;
-        if (s.begin(main.x, main.y, rect, now, mode)) this.gesture = grasp;
-      } else if (!grasp && !frozen) {
-        s.hover(main.x, main.y, rect, false);
+      if (grasp === 'pinch' && isHand && !frozen && !this.consumed && !onHud) {
+        // pinch and hold to draw: the stroke (or shape) starts once the pinch has been held a moment, from where it began
+        if (this.hold.t0 === null && grasp !== this.prevGrasp) this.hold = { t0: now, x: main.x, y: main.y, progress: 0 };
+        if (this.hold.t0 !== null) {
+          this.hold.progress = clamp((now - this.hold.t0) / HOLD_DRAW_S, 0, 1);
+          if (this.hold.progress >= 1) {
+            const { x, y } = this.hold;
+            this.hold = { t0: null, x: 0, y: 0, progress: 0 };
+            if (s.begin(x, y, rect, now, s.tool)) { this.gesture = 'pinch'; s.add(main.x, main.y, rect, now); }
+          }
+        }
+      } else {
+        if (this.hold.t0 !== null) { // the pinch ended (or moved onto a button) before it was held long enough
+          if (!main.pinch && !grasp && !frozen) s.click(this.hold.x, this.hold.y, rect); // a quick pinch in the scene = a click: select what is there
+          this.hold = { t0: null, x: 0, y: 0, progress: 0 };
+        }
+        if (grasp && !frozen && !this.consumed && !onHud && (grasp !== this.prevGrasp)) {
+          const mode = grasp === 'grab' ? 'move' : s.tool; // grab (thumb + middle) and a mouse press start at once
+          if (s.begin(main.x, main.y, rect, now, mode)) this.gesture = grasp;
+        } else if (!grasp && !frozen) {
+          s.hover(main.x, main.y, rect, false);
+        }
       }
     } else if (grasp === this.gesture && !onHud) {
       s.add(main.x, main.y, rect, now);

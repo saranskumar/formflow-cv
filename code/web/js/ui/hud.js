@@ -24,7 +24,7 @@ const TOOL_GROUPS = [
   ['shape', 'Shape', ['extrude', 'cut']],
 ];
 const ACTION_GROUPS = [
-  ['history', 'History', [['undo', '↶', 'Undo'], ['clear', '✕', 'Clear scene']]],
+  ['history', 'History', [['undo', '↶', 'Undo'], ['delete', '🗑', 'Delete'], ['clear', '✕', 'Clear scene']]],
   ['build', 'Build', [['join', '⛓', 'Join lines'], ['hull', '⬡', 'Visual hull'], ['photos', '🖼', 'Photos → 3D']]],
   ['file', 'File', [['import', '⇪', 'Import model'], ['exportOBJ', '⇩', 'Export OBJ'], ['exportSTL', '⇩', 'Export STL']]],
   ['depth', 'Depth', [['depthDown', '−', 'Depth −'], ['depthUp', '+', 'Depth +']]],
@@ -35,7 +35,7 @@ const NAV_ACTIONS = [['models', '🧪', 'Models'], ['demo', '▶', 'Demo'], ['se
 // The keyboard key of every button, shown on the button and in its tooltip, so the shortcuts can be learned by using the app
 const KEYS = {
   tool: { free: '1', line: '2', rect: '3', circle: '4', cube: '5', sphere: '6', cylinder: '7', cone: '8', pyramid: '9', move: '0', scale: 'X', extrude: 'Q', cut: 'K' },
-  action: { undo: 'Z', clear: 'C', join: 'J', hull: 'U', import: 'I', exportOBJ: 'E', resetView: 'V', depthDown: '[', depthUp: ']', snap: 'S', settings: ',', help: 'G', demo: 'O', models: 'M' },
+  action: { undo: 'Z', delete: 'Del', clear: 'C', join: 'J', hull: 'U', import: 'I', exportOBJ: 'E', resetView: 'V', depthDown: '[', depthUp: ']', snap: 'S', settings: ',', help: 'G', demo: 'O', models: 'M' },
 };
 
 const el = (tag, cls, html = '') => { const e = document.createElement(tag); if (cls) e.className = cls; e.innerHTML = html; return e; };
@@ -171,6 +171,14 @@ export class Hud {
   hit(x, y) {
     const e = document.elementFromPoint(x, y);
     return e && e.closest('.hudzone') ? e.closest('button') || e.closest('.hudzone') : null;
+  }
+
+  /** Scroll the panel under a screen point by dy pixels (a pinch dragged on a panel). Returns whether anything scrolled. */
+  scrollBy(x, y, dy) {
+    for (let e = document.elementFromPoint(x, y); e && e !== document.body; e = e.parentElement) {
+      if (/(auto|scroll)/.test(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight + 1) { e.scrollTop += dy; return true; }
+    }
+    return false;
   }
 
   /** A pinch over a HUD element is a click. */

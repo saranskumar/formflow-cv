@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Sketch } from '../js/core/sketch.js';
-import { Controller, FREEZE_AFTER_RELEASE } from '../js/core/controller.js';
+import { Solid } from '../js/core/shapes.js';
+import { Controller, FREEZE_AFTER_RELEASE, HOLD_DRAW_S } from '../js/core/controller.js';
 
 const R = { x: 0, y: 0, w: 1280, h: 720 };
 
@@ -15,7 +16,9 @@ function rig(hudRects = []) {
   const hand = (x, y, o = {}) => ({ x, y, cx: o.cx ?? x, cy: o.cy ?? y, pinch: false, grab: false, fist: false, peace: false, source: 'hand', ...o });
   const step = (main, second = null, dt = 1 / 30) => { now += dt; c.update({ main, second }, now); };
   const run = (n, f) => { for (let i = 0; i < n; i++) f(i); };
-  return { sketch, c, pressed, hand, step, run, get now() { return now; } };
+  // pinch and hold: a stroke only starts once the pinch has been held a moment (HOLD_DRAW_S); a quicker pinch is a click
+  const hold = (x, y, o = {}) => run(Math.ceil(HOLD_DRAW_S * 30) + 1, () => step(hand(x, y, { pinch: true, ...o })));
+  return { sketch, c, pressed, hand, step, run, hold, get now() { return now; } };
 }
 
 test('pinch + drag draws the current tool; hover alone does nothing', () => {
@@ -23,7 +26,7 @@ test('pinch + drag draws the current tool; hover alone does nothing', () => {
   r.sketch.setTool('cube');
   r.run(10, () => r.step(r.hand(640, 360)));
   assert.equal(r.sketch.items.length, 0);
-  r.step(r.hand(640, 360, { pinch: true }));
+  r.hold(640, 360);
   assert.ok(r.c.drawing);
   r.run(6, (i) => r.step(r.hand(640 + 12 * (i + 1), 360, { pinch: true })));
   r.step(r.hand(700, 360)); // release
@@ -34,7 +37,7 @@ test('pinch + drag draws the current tool; hover alone does nothing', () => {
 test('thumb+middle grab moves the nearest object whatever the tool is', () => {
   const r = rig();
   r.sketch.setTool('cube');
-  r.step(r.hand(640, 360, { pinch: true }));
+  r.hold(640, 360);
   r.run(5, (i) => r.step(r.hand(640 + 12 * (i + 1), 360, { pinch: true })));
   r.step(r.hand(700, 360));
   r.run(15, () => r.step(r.hand(700, 360))); // let the post-release pause end
@@ -78,14 +81,14 @@ test('a pinch that started on a HUD button never turns into a stroke when it sli
 
 test('after a hand release input is ignored briefly, then works normally', () => {
   const r = rig();
-  r.step(r.hand(640, 360, { pinch: true }));
+  r.hold(640, 360);
   r.run(5, (i) => r.step(r.hand(660 + 8 * i, 360, { pinch: true })));
   r.step(r.hand(700, 360)); // release
   assert.equal(r.sketch.items.length, 1);
   r.step(r.hand(700, 340, { pinch: true })); // jittery re-pinch immediately
   assert.ok(!r.c.drawing);
   r.run(Math.ceil(FREEZE_AFTER_RELEASE * 30) + 2, () => r.step(r.hand(700, 340)));
-  r.step(r.hand(700, 340, { pinch: true }));
+  r.hold(700, 340);
   assert.ok(r.c.drawing);
 });
 
@@ -147,7 +150,7 @@ test('a single pinch of the second hand does nothing', () => {
 
 test('starting the two-hand zoom cancels a stray stroke and blocks drawing right after', () => {
   const r = rig();
-  r.step(r.hand(600, 300, { pinch: true }));
+  r.hold(600, 300);
   r.run(4, (i) => r.step(r.hand(620 + 10 * i, 300, { pinch: true })));
   assert.ok(r.c.drawing);
   r.step(r.hand(650, 300, { pinch: true }), r.hand(900, 300, { pinch: true }));
@@ -214,4 +217,49 @@ test('only a pointing finger selects: an open hand over a button does nothing, a
   assert.deepEqual(r.pressed, []);
   r.step(r.hand(150, 130, { pinch: true }));
   assert.deepEqual(r.pressed, ['go']);
+});
+
+
+// ------------------------------------------------------------------ pinch: a tap clicks, a hold draws, a drag on a panel scrolls
+test('a quick pinch in the scene is a click (it selects), not a stroke; the same pinch held draws', () => {
+  const r = rig();
+  r.sketch.setTool('free');
+  const cube = r.sketch.addItem(new Solid('cube', [0, 0, 0], 0.4));
+  const p = r.sketch.project(cube.center, R);
+  r.run(3, () => r.step(r.hand(p.x, p.y)));
+  r.run(4, () => r.step(r.hand(p.x, p.y, { pinch: true }))); // 0.13 s: shorter than the hold
+  assert.ok(r.c.hold.progress > 0 && r.c.hold.progress < 1, 'a ring shows the hold coming');
+  r.run(12, () => r.step(r.hand(p.x, p.y)));                 // let go
+  assert.equal(r.sketch.items.length, 1, 'no stroke');
+  assert.equal(r.sketch.selected, cube, 'the cube was clicked');
+  r.run(12, () => r.step(r.hand(R.w - 40, 40)));
+  r.hold(R.w - 40, 40);                                      // a tap on empty space clears it ... when it is quick; held, it draws
+  r.run(6, (i) => r.step(r.hand(R.w - 40 - 12 * i, 40, { pinch: true })));
+  assert.ok(r.c.drawing);
+});
+
+test('a tap on empty space clears the selection, and the mouse draws at once', () => {
+  const r = rig();
+  const cube = r.sketch.addItem(new Solid('cube', [0, 0, 0], 0.4));
+  r.sketch.selected = cube;
+  r.run(3, () => r.step(r.hand(30, 30)));
+  r.run(3, () => r.step(r.hand(30, 30, { pinch: true })));
+  r.run(12, () => r.step(r.hand(30, 30)));
+  assert.equal(r.sketch.selected, null);
+  r.step(r.hand(640, 360, { pinch: true, source: 'mouse' }));
+  assert.ok(r.c.drawing, 'no hold for the mouse');
+});
+
+test('a pinch that starts on a panel (not a button) scrolls it instead of pressing or drawing', () => {
+  const scrolled = [];
+  const sketch = new Sketch();
+  const panel = { id: 'panel', tagName: 'DIV', x: 100, y: 100, w: 300, h: 300 };
+  const c = new Controller({ sketch, getRect: () => R, ui: { hit: (x, y) => (x >= 100 && x <= 400 && y >= 100 && y <= 400 ? panel : null), press: () => scrolled.push('PRESS'), scrollBy: (x, y, dy) => { scrolled.push(Math.round(dy)); return true; } } });
+  let now = 0;
+  const step = (y, pinch) => { now += 1 / 30; c.update({ main: { x: 200, y, cx: 200, cy: y, pinch, grab: false, fist: false, peace: false, source: 'hand' }, second: null }, now); };
+  for (let i = 0; i < 3; i++) step(300, false);
+  step(300, true); step(280, true); step(250, true); step(250, false);
+  assert.deepEqual(scrolled.filter((v) => v !== 'PRESS'), [20, 30], 'dragged up by 20 then 30 px: the content moves with the hand');
+  assert.ok(!scrolled.includes('PRESS'));
+  assert.equal(sketch.items.length, 0);
 });

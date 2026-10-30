@@ -1,9 +1,24 @@
 """Run the FormFlow web app:  python -m server  [--port 8000] [--no-browser]"""
 import argparse
+import logging
 import threading
 import webbrowser
 
 import uvicorn
+
+
+class _ClientHangUp(logging.Filter):
+    """On Windows, asyncio prints a traceback when the browser drops a connection (a reload, a closed tab):
+    "ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host".
+    The client simply left, so nothing is wrong; every other error is still shown."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        exc = record.exc_info[1] if record.exc_info else None
+        return not isinstance(exc, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError))
+
+
+def quiet_client_hangups() -> None:
+    logging.getLogger("asyncio").addFilter(_ClientHangUp())
 
 
 def main():
@@ -15,6 +30,7 @@ def main():
     url = f"http://{args.host}:{args.port}/"
     if not args.no_browser:
         threading.Timer(1.2, lambda: webbrowser.open(url)).start()
+    quiet_client_hangups()
     print(f"FormFlow web app: {url}   (Chrome or Edge recommended; allow the camera)")
     uvicorn.run("server.app:app", host=args.host, port=args.port, log_level="warning")
 

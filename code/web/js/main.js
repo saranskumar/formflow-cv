@@ -35,6 +35,7 @@ import { JoinPrompt } from './ui/prompt.js';
 import { HullPanel } from './ui/hullpanel.js';
 import { HullWorker } from './ui/hullworker.js';
 import { DemoPanel } from './ui/demo.js';
+import { ScrollFab } from './ui/scroll.js';
 import { ModelLab } from './ui/modellab.js';
 import { MODELS, summarize, extract } from './core/benchmark.js';
 import { Bridge, toBase64 } from './bridge.js';
@@ -354,6 +355,16 @@ async function photosTo3D(files, { build = true } = {}) {
 }
 
 // Models panel: time each available model on live camera pictures (the app's own detection pauses meanwhile)
+/** Where to load a model from: the app's own files, the downloaded copy in vendor/models when it exists, else Google's storage. */
+const localModels = new Map();
+async function modelPath(m) {
+  if (m.file) return `./vendor/${m.file}`;
+  if (m.local) {
+    if (!localModels.has(m.local)) localModels.set(m.local, fetch(`./vendor/${m.local}`, { method: 'HEAD' }).then((r) => r.ok && +r.headers.get('content-length') > 1e6).catch(() => false));
+    if (await localModels.get(m.local)) return `./vendor/${m.local}`;
+  }
+  return m.url;
+}
 const FACTORY = { hand: HandLandmarker, gesture: GestureRecognizer, holistic: HolisticLandmarker, pose: PoseLandmarker };
 // waits for the next camera picture, but never longer than a moment: a stalled camera must not hang the test
 const nextCameraPicture = () => new Promise((res) => { const stop = setTimeout(res, 250); const done = () => { clearTimeout(stop); res(); }; if (hasFrameCallback) video.requestVideoFrameCallback(done); else setTimeout(done, 34); });
@@ -365,7 +376,7 @@ async function runModelTest(id, onProgress, onSnap) {
   benchmarking = true;
   let lm = null;
   try {
-    const path = m.url || `./vendor/${m.file}`;
+    const path = await modelPath(m);
     const make = (delegate) => FACTORY[m.api].createFromOptions(visionFileset, {
       baseOptions: { modelAssetPath: path, delegate },
       runningMode: 'VIDEO', ...(m.api === 'pose' ? { numPoses: 1 } : m.api === 'holistic' ? {} : { numHands: 2 }),
@@ -429,10 +440,12 @@ const modelLab = new ModelLab($('hud'), {
   run: runModelTest, use: useModelSetting,
   current: () => ({ active: activeModel }),
   live: () => ({ video, snap: liveSnapshot() }),
+  locals: async () => Object.fromEntries(await Promise.all(MODELS.filter((m) => m.local).map(async (m) => [m.id, (await modelPath(m)) !== m.url]))),
 });
 
 // Demo gallery: a ready-made photo set (code/samples) loaded into the views with its outlines; Make 3D builds the model
 const demoPanel = new DemoPanel($('hud'), (set) => loadDemo(set));
+const scrollFab = new ScrollFab($('hud')); // page up / down arrows for any panel too long for the screen
 async function loadDemo(set) {
   demoPanel.close();
   hud.toast(`Loading the ${set.title} pictures…`, 'info');
@@ -652,6 +665,7 @@ function perform(cmd, arg) {
     case 'tool': if (mode === 'planes' && !PLANE_TOOLS.includes(arg)) { hud.toast(`${TOOL_INFO[arg][1]} is a 3D tool. In 3-Plane Hull, draw outlines with Freehand, Line, Rectangle or Circle.`, 'warn', 6000); break; }
       sketch.setTool(arg, now()); hud.setTool(arg); hud.toast(`${TOOL_INFO[arg][1]}: ${TOOL_INFO[arg][2]}`); break;
     case 'undo': sketch.undo(); hud.toast('Undo'); break;
+    case 'delete': if (sketch.deleteSelected()) hud.toast('Deleted. Undo brings it back.', 'ok'); else hud.toast('Nothing selected. Click an object first: pinch quickly, or click it with the mouse.', 'info', 5000); break;
     case 'clear': if (!sketch.items.length) { hud.toast('The scene is already empty.'); break; } sketch.clear(); hud.toast('Scene cleared. Undo brings it back.', 'warn'); break;
     case 'import': openImport(); break;
     case 'photos': pickPhotos(); break;
@@ -695,7 +709,8 @@ window.addEventListener('keydown', (e) => {
   const tools = { 1: 'free', 2: 'line', 3: 'rect', 4: 'circle', 5: 'cube', 6: 'sphere', 7: 'cylinder', 8: 'cone', 9: 'pyramid', 0: 'move', x: 'scale', q: 'extrude', k: 'cut' };
   if (k in tools) perform('tool', tools[k]);
   else {
-    const map = { z: 'undo', c: 'clear', e: 'exportOBJ', i: 'import', v: 'resetView', '[': 'depthDown', ']': 'depthUp', g: 'help', h: 'swap', ',': 'settings', j: 'join', u: 'hull', p: 'mode', o: 'demo', m: 'models', d: 'diagnostics', f: 'viewFront', l: 'viewSide', t: 'viewTop', s: 'snap', '+': 'zoomIn', '=': 'zoomIn', '-': 'zoomOut' };
+    if (e.key === 'Delete' || e.key === 'Backspace') return perform('delete');
+  const map = { z: 'undo', c: 'clear', e: 'exportOBJ', i: 'import', v: 'resetView', '[': 'depthDown', ']': 'depthUp', g: 'help', h: 'swap', ',': 'settings', j: 'join', u: 'hull', p: 'mode', o: 'demo', m: 'models', d: 'diagnostics', f: 'viewFront', l: 'viewSide', t: 'viewTop', s: 'snap', '+': 'zoomIn', '=': 'zoomIn', '-': 'zoomOut' };
     if (map[k]) perform(map[k]);
   }
 });
@@ -812,9 +827,10 @@ const adapt = (lm) => {
 
 async function startTracker() {
   const fileset = visionFileset = await FilesetResolver.forVisionTasks('./vendor/wasm');
-  const build = async (model) => {
+  const build = async (m0) => {
+    const model = { ...m0, path: await modelPath(m0) };
     const opts = (delegate) => ({
-      baseOptions: { modelAssetPath: model.url || `./vendor/${model.file}`, delegate },
+      baseOptions: { modelAssetPath: model.path, delegate },
       runningMode: 'VIDEO', numHands: 4, minHandDetectionConfidence: 0.45, minHandPresenceConfidence: 0.4, minTrackingConfidence: 0.4,
     });
     const order = model.delegate === 'CPU' ? ['CPU'] : ['GPU', 'CPU']; // no graphics-card support: fall back to the processor
@@ -1056,6 +1072,7 @@ function tick(tms) {
     chipTimer = tms;
     hud.setFps(fps);
     refreshAvailability();
+    scrollFab.update();
     sessionLog.note({ frameMs: +profiler.avg.frame.toFixed(1), workMs: +profiler.avg.work.toFixed(1), detectMs: +profiler.avg.detect.toFixed(1), quality: governor.level });
     const lvl = governor.update(profiler.avg.frame, tms / 1000);
     if (lvl !== null) applyQuality(lvl);
@@ -1086,6 +1103,7 @@ function tick(tms) {
 function refreshAvailability() {
   const items = sketch.items, solids = items.some((it) => it.volumetric);
   hud.setEnabled('undo', sketch.ops.length > 0);
+  hud.setEnabled('delete', !!sketch.selected);
   hud.setEnabled('clear', items.length > 0);
   hud.setEnabled('exportOBJ', items.length > 0);
   hud.setEnabled('exportSTL', solids);
@@ -1111,6 +1129,7 @@ function drawHands(t) {
     if (!guide.visible) overlay.cursor(x, y, role, f.pinch || f.grab, role === 'main' ? '' : 'NAV');
     if (role === 'main' && !guide.visible) hover = hud.hit(f.x, f.y);
     if (role === 'main' && controller.dwell.progress > 0 && !guide.visible) overlay.progress(x, y, controller.dwell.progress);
+    if (role === 'main' && controller.hold.progress > 0 && !guide.visible) overlay.progress(x, y, controller.hold.progress, '#1473E6');
   }
   hud.hover(hover);
   if (lastRoi && lastRoi.w < 0.999 && !guide.visible) { // where the detector is looking (far / auto ranges)
@@ -1172,7 +1191,7 @@ requestAnimationFrame(tick);
 // Hook for automated checks: drive the controller with scripted frames on a virtual clock.
 window.formflow = {
   conditions, sessionLog, senseConditions, profiler, governor, applyQuality, get cameraAssist() { return cameraAssist; },
-  demoPanel, loadDemo, focusView, modelLab, runModelTest,
+  demoPanel, loadDemo, focusView, modelLab, runModelTest, scrollFab,
   sketch, controller, perform, importBuffer, guide, hud, view, tracks, handTracker, diagnostics, bridge, processResult, last, settingsPanel, planner, mapper, hullPanel, joinPrompt,
   get pendingJoin() { return pendingJoin; }, answerJoin, joinAll, makeHull, photosTo3D, setView, hullOpts, setMode, layout, planeBar, refImages, loadImage, cellOp, cells, planeOpts, traced, stepPlanes, get mode() { return mode; },
   get settings() { return settings; }, setSetting, startReach, currentRange,

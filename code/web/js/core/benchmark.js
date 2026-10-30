@@ -1,8 +1,8 @@
 // Model test: how fast does a model run on THIS computer, and does it find a hand? Pure helpers; main.js runs the models.
 //
-// Every model here is an official MediaPipe model that runs in the browser. Two are shipped with the app (web/vendor); the
-// others are fetched from Google's model storage the first time they are tested (nothing is bundled or installed), so they
-// need an internet connection once and are then cached by the browser.
+// Every model here is an official MediaPipe model that runs in the browser. Two are shipped with the app (web/vendor). The
+// others are used from web/vendor/models when `python tools/download_models.py` has fetched them (then everything works
+// offline), and otherwise downloaded from Google's model storage when tested (internet once; the browser caches them).
 
 const GS = 'https://storage.googleapis.com/mediapipe-models';
 
@@ -14,12 +14,12 @@ export const MODELS = [
   { id: 'hand-gpu', api: 'hand', kind: 'hand', title: 'Hand Landmarker', delegate: 'GPU', file: 'hand_landmarker.task', size: '7.8 MB', what: 'palm detector + 21 finger points (the one the app uses)' },
   { id: 'hand-cpu', api: 'hand', kind: 'hand', title: 'Hand Landmarker', delegate: 'CPU', file: 'hand_landmarker.task', size: '7.8 MB', what: 'the same model on the processor instead of the graphics card' },
   { id: 'hand-640', api: 'hand', kind: 'hand', title: 'Hand Landmarker, smaller picture', delegate: 'GPU', file: 'hand_landmarker.task', size: '7.8 MB', picture: 640, what: 'the same model, given a 640-pixel copy of each camera picture (less to upload)' },
-  { id: 'gesture-gpu', api: 'gesture', kind: 'hand', title: 'Gesture Recognizer', delegate: 'GPU', url: `${GS}/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task`, size: '8.4 MB', what: 'hand points plus a name for the gesture (open palm, pointing, victory...)' },
-  { id: 'holistic-gpu', api: 'holistic', kind: 'hand', title: 'Holistic Landmarker', delegate: 'GPU', url: `${GS}/holistic_landmarker/holistic_landmarker/float16/latest/holistic_landmarker.task`, size: '13.7 MB', what: 'both hands, body and face in one model (heavier)' },
+  { id: 'gesture-gpu', api: 'gesture', kind: 'hand', title: 'Gesture Recognizer', delegate: 'GPU', url: `${GS}/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task`, local: 'models/gesture_recognizer.task', size: '8.4 MB', what: 'hand points plus a name for the gesture (open palm, pointing, victory...)' },
+  { id: 'holistic-gpu', api: 'holistic', kind: 'hand', title: 'Holistic Landmarker', delegate: 'GPU', url: `${GS}/holistic_landmarker/holistic_landmarker/float16/latest/holistic_landmarker.task`, local: 'models/holistic_landmarker.task', size: '13.7 MB', what: 'both hands, body and face in one model (heavier)' },
   { id: 'pose-gpu', api: 'pose', kind: 'pose', title: 'Pose Landmarker (lite)', delegate: 'GPU', file: 'pose_landmarker_lite.task', size: '5.8 MB', what: 'arm and wrist, used to help find small or lost hands (the one the app uses)' },
   { id: 'pose-cpu', api: 'pose', kind: 'pose', title: 'Pose Landmarker (lite)', delegate: 'CPU', file: 'pose_landmarker_lite.task', size: '5.8 MB', what: 'the same model on the processor' },
-  { id: 'pose-full', api: 'pose', kind: 'pose', title: 'Pose Landmarker (full)', delegate: 'GPU', url: `${GS}/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task`, size: '9.4 MB', what: 'a more accurate body model than lite' },
-  { id: 'pose-heavy', api: 'pose', kind: 'pose', title: 'Pose Landmarker (heavy)', delegate: 'GPU', url: `${GS}/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task`, size: '30.7 MB', what: 'the most accurate body model, and the slowest' },
+  { id: 'pose-full', api: 'pose', kind: 'pose', title: 'Pose Landmarker (full)', delegate: 'GPU', url: `${GS}/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task`, local: 'models/pose_landmarker_full.task', size: '9.4 MB', what: 'a more accurate body model than lite' },
+  { id: 'pose-heavy', api: 'pose', kind: 'pose', title: 'Pose Landmarker (heavy)', delegate: 'GPU', url: `${GS}/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task`, local: 'models/pose_landmarker_heavy.task', size: '30.7 MB', what: 'the most accurate body model, and the slowest' },
 ];
 
 /** Models that could be tried but are not available in the browser tasks used here: shown so it is clear what exists. */

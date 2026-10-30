@@ -33,7 +33,13 @@ Webcam ─► MediaPipe hand landmarks ─► tracker (stabilise, pick user's ha
   shows the time per picture, the frame rate it allows and whether it found a hand; a live picture beside the table shows
   the points the model finds. **Use** switches the model that tracks your hands (remembered). Models marked "downloaded
   when tested" come from Google's model storage the first time and are cached by the browser; nothing else leaves your
-  computer. If a chosen model cannot start, the app falls back to the standard one.
+  computer. If a chosen model cannot start, the app falls back to the standard one. To have every model on disk (works
+  offline, about 62 MB, not stored in git) run `python tools/download_models.py` once; they go to `web/vendor/models/`.
+- **Pinch to click, pinch and hold to draw**: a quick pinch (a tap) presses a button or selects the object under your
+  fingers (it gets a blue outline; **Delete** or the `Del` key removes it, Undo brings it back). Hold the pinch a moment
+  (a ring fills) and then move to draw. The mouse draws at once.
+- **Scrolling without a wheel**: long panels (Settings, Models, Demo, the guide) get big ▲ ▼ buttons with a page counter,
+  can be dragged with a pinch, and keep their place when you change a setting. Settings has a section menu at the top.
 - **Point and hold**: with the index finger out (others curled) at a button, a ring fills for 0.8 s and the button is
   pressed. A pinch still presses at once.
 - **Smooth navigation**: zoom, pan and the Front / Side / Top / Reset view moves glide instead of jumping.

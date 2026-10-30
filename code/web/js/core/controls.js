@@ -3,12 +3,14 @@
 //   hand: 'draw' = the drawing hand (cyan), 'nav' = the navigation hand (magenta), 'both', or null (no hand needed)
 
 export const CONTROLS = [
-  { id: 'draw', action: 'Draw a curve', hand: 'draw', gesture: 'Pinch thumb + index, then move', key: '1', button: 'Freehand' },
+  { id: 'draw', action: 'Draw a curve', hand: 'draw', gesture: 'Pinch thumb + index and hold a moment (a ring fills), then move', key: '1', button: 'Freehand' },
   { id: 'place', action: 'Place a shape (line, rectangle, circle, cube, sphere, cylinder, cone, pyramid)', hand: 'draw', gesture: 'Pinch at the centre, drag outward, release', key: '2 – 9', button: 'Top bar' },
   { id: 'grab', action: 'Move an object', hand: 'draw', gesture: 'Pinch thumb + middle finger, then move', key: '0', button: 'Move' },
   { id: 'scale', action: 'Resize an object', hand: 'draw', gesture: 'Scale tool: pinch it, drag up or down', key: 'X', button: 'Scale' },
   { id: 'extrude', action: 'Extrude a closed outline into a solid', hand: 'draw', gesture: 'Extrude tool: pinch inside the outline, drag up to pull it out (down pushes the other way)', key: 'Q', button: 'Extrude' },
   { id: 'cut', action: 'Cut a pocket or hole into a solid', hand: 'draw', gesture: 'Cut tool: pinch inside an outline drawn over the solid, drag up to set the depth', key: 'K', button: 'Cut' },
+  { id: 'click', action: 'Click: press a button, or select an object', hand: 'draw', gesture: 'Pinch quickly (a tap) on a button or an object', key: '', button: 'any button' },
+  { id: 'delete', action: 'Delete the selected object', hand: null, gesture: '', key: 'Del', button: 'Delete' },
   { id: 'point', action: 'Choose a button without pinching', hand: 'draw', gesture: 'Point with the index finger (others curled) at a button and hold for a moment: a ring fills, then it is pressed', key: '', button: 'any button' },
   { id: 'press', action: 'Press a button', hand: 'draw', gesture: 'Pinch while pointing at it', key: '', button: 'any button' },
   { id: 'orbit', action: 'Orbit the camera', hand: 'nav', gesture: 'Fist, then move', key: '', button: '' },

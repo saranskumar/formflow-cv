@@ -55,10 +55,10 @@ export class Overlay {
 
   /** The pointer: a ring in the hand's colour (a filled dot while pinching). */
   /** A ring that fills as a point-and-hold selection nears (p = 0..1). */
-  progress(x, y, p) {
+  progress(x, y, p, color = '#E8590C') {
     const c = this.ctx;
     c.save();
-    c.lineWidth = 5; c.lineCap = 'round'; c.strokeStyle = '#E8590C';
+    c.lineWidth = 5; c.lineCap = 'round'; c.strokeStyle = color;
     c.beginPath(); c.arc(x, y, 26, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * p); c.stroke();
     c.restore();
   }

@@ -3,3 +3,4 @@ __pycache__/
 exports/
 *.pyc
 calibration_web.json
+web/vendor/models/

@@ -32,6 +32,7 @@ export class ModelLab {
     this.results = {};
     this.busy = null;
     this.snap = null; // the latest picture of the model under test
+    this.local = {}; // model id -> true when its file is on this computer (web/vendor/models)
     this.el = document.createElement('div');
     this.el.className = 'hudzone modellab';
     this.el.hidden = true;
@@ -58,6 +59,7 @@ export class ModelLab {
   show() {
     this.el.hidden = false;
     this.render();
+    this.api.locals().then((l) => { this.local = l; this.render(); }); // which models are already on this computer
     this.timer = setInterval(() => this._draw(), 90);
   }
 
@@ -104,15 +106,15 @@ export class ModelLab {
       const r = this.results[m.id], running = this.busy && this.busy.id === m.id;
       const usable = m.api === 'hand' || m.api === 'gesture'; // these can drive the app's hand tracking
       const inUse = usable && m.id === cur.active;
-      const result = running ? `<span class="bar2"><i style="width:${Math.round(this.busy.progress * 100)}%"></i></span> ${m.url && this.busy.progress === 0 ? 'downloading…' : 'testing…'}`
+      const result = running ? `<span class="bar2"><i style="width:${Math.round(this.busy.progress * 100)}%"></i></span> ${m.url && !this.local[m.id] && this.busy.progress === 0 ? 'downloading…' : 'testing…'}`
         : r ? describe(r, m.kind) : r === null ? '<span class="warn">could not run</span>' : '<span class="dim">not tested yet</span>';
       const code = m.picture ? String(m.picture) : m.delegate;
       const faster = r && usable && !inUse && tips.some((a) => a.kind === 'hand' && a.best === code);
-      return `<tr><td><b>${m.title}</b>${m.url ? ' <i class="net">downloaded when tested</i>' : ''}<small>${m.what}</small></td><td>${m.delegate}${m.picture ? `, ${m.picture} px` : ''}${inUse ? ' <i class="cur">in use</i>' : ''}</td><td>${m.size}</td>
+      return `<tr><td><b>${m.title}</b>${m.url ? (this.local[m.id] ? ' <i class="net here">on this computer</i>' : ' <i class="net">downloaded when tested</i>') : ''}<small>${m.what}</small></td><td>${m.delegate}${m.picture ? `, ${m.picture} px` : ''}${inUse ? ' <i class="cur">in use</i>' : ''}</td><td>${m.size}</td>
         <td class="res">${result}</td>
         <td><button type="button" class="tb" data-run="${m.id}" ${this.busy ? 'disabled' : ''}>Test</button>${usable && !inUse ? ` <button type="button" class="tb ${faster ? 'wide' : ''}" data-use="${m.id}" title="Track your hands with this model">${faster ? 'Use (faster)' : 'Use'}</button>` : ''}</td></tr>`;
     }).join('');
-    this.body.innerHTML = `<p class="help">Each test runs the model on about 3 seconds of live camera pictures. <b>Hold your open hand in view</b>: the picture on the left shows what the model finds. The app pauses while a test runs. Models marked "downloaded when tested" come from Google's model storage the first time (needs internet).</p>
+    this.body.innerHTML = `<p class="help">Each test runs the model on about 3 seconds of live camera pictures. <b>Hold your open hand in view</b>: the picture on the left shows what the model finds. The app pauses while a test runs. Models marked "downloaded when tested" come from Google's model storage the first time (needs internet); <code>python tools/download_models.py</code> saves them all on this computer.</p>
       <div class="tablewrap"><table class="models"><thead><tr><th>Model</th><th>Runs on</th><th>Size</th><th>Result on this computer</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="row"><button type="button" class="tb wide" data-all ${this.busy ? 'disabled' : ''}>Test all</button></div>
       ${this.lastError ? `<p class="warn">⚠ ${this.lastError}</p>` : ''}${tips.map((a) => `<p>${a.text}</p>`).join('')}

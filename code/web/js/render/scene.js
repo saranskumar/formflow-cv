@@ -269,6 +269,9 @@ export class SceneView {
       line.userData.view = gl.view;
       this.dynamic.add(line);
     }
+    if (s.selected && s.selected !== s.hot) {
+      this.dynamic.add(new THREE.LineSegments(segmentsGeometry(s.selected.polylines()), new THREE.LineBasicMaterial({ color: 0x1473E6 })));
+    }
     if (s.hot) {
       const box = segmentsGeometry(s.hot.polylines().length > 0 && s.hot.kind === 'mesh' ? s.hot.polylines() : s.hot.polylines());
       this.dynamic.add(new THREE.LineSegments(box, new THREE.LineBasicMaterial({ color: COL.hot })));

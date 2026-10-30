@@ -156,3 +156,21 @@ def test_the_real_samples_are_all_listed():
     for s in c.get("/api/samples").json():
         for v in s["views"]:
             assert c.get(f"/samples/{s['id']}/{v}.png").status_code == 200
+
+
+def test_a_browser_dropping_the_connection_is_not_logged_as_an_error():
+    import logging
+    from server.__main__ import _ClientHangUp
+
+    def record(exc):
+        try:
+            raise exc
+        except Exception:
+            import sys
+            return logging.LogRecord("asyncio", logging.ERROR, __file__, 1, "Exception in callback", None, sys.exc_info())
+
+    f = _ClientHangUp()
+    assert f.filter(record(ConnectionResetError(10054, "forcibly closed"))) is False
+    assert f.filter(record(BrokenPipeError())) is False
+    assert f.filter(record(ValueError("a real problem"))) is True
+    assert f.filter(logging.LogRecord("asyncio", logging.WARNING, __file__, 1, "no exception", None, None)) is True

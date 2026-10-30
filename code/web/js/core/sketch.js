@@ -50,6 +50,7 @@ export class Sketch {
     this.zoomGoal = this.dist; this.panGoal = [0, 0, 0]; this.tw = null; this._gt = null;
     this.rotated = 0; this.undoCount = 0; this.moved = 0;
     this.hot = null; // item under the cursor
+    this.selected = null; // the item last clicked (a quick pinch or a mouse click without drawing)
     this.onNote = null; // (text, kind) => void: told what an Extrude or Cut did (or why it did nothing)
     this.cursor = null; // last 3D cursor position
     this._resetGesture();
@@ -305,6 +306,21 @@ export class Sketch {
 
   _note(text, kind = 'ok') { if (this.onNote) this.onNote(text, kind); }
 
+  /** A click in the scene: select the item under the point, or nothing when there is none. */
+  click(sx, sy, rect) {
+    this.selected = this.layout ? null : this.pick(sx, sy, rect);
+    this.hot = null;
+    return this.selected;
+  }
+
+  /** Remove the selected item (one undo step). */
+  deleteSelected() {
+    const it = this.selected;
+    if (!it || !this.items.includes(it)) return false;
+    this.replaceItems([it], []);
+    return true;
+  }
+
   /** Start a gesture. mode = the tool, or 'move' / 'scale' to act on an existing object. Returns false if nothing to act on. */
   begin(sx, sy, rect, now, mode = this.tool) {
     this._resetGesture();
@@ -493,6 +509,7 @@ export class Sketch {
     this.items.push(...added);
     this.ops.push({ kind: 'replace', removed, at, added });
     this.hot = null;
+    if (this.selected && !this.items.includes(this.selected)) this.selected = null;
   }
 
   undo() {
@@ -508,6 +525,7 @@ export class Sketch {
     } else return;
     this.undoCount++;
     this.hot = null;
+    if (this.selected && !this.items.includes(this.selected)) this.selected = null;
     this.joinHint = null;
   }
 

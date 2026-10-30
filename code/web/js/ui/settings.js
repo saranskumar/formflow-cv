@@ -27,6 +27,8 @@ export function markSeg(btn) {
   });
 }
 
+import { sectionNav, sectionJump } from './scroll.js';
+
 export class SettingsPanel {
   /** api: { get(): settings, set(key, value), reach(), resetReach(), close() } */
   constructor(parent, api) {
@@ -38,6 +40,7 @@ export class SettingsPanel {
     this.el.addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
+      if (b.dataset.jump !== undefined) return sectionJump(this.el, +b.dataset.jump);
       if (b.dataset.set) api.set(b.dataset.set, b.dataset.v);
       else if (b.dataset.act === 'reach') api.reach();
       else if (b.dataset.act === 'resetReach') api.resetReach();
@@ -54,6 +57,7 @@ export class SettingsPanel {
   render() {
     const s = this.api.get();
     const nav = otherHand(s.dominant);
+    const top = this.el.scrollTop; // changing a setting redraws the panel: stay where you were, do not jump to the top
     this.el.innerHTML = `
       <div class="head"><b>Settings</b><button type="button" class="x" data-act="close" aria-label="Close">✕</button></div>
       <section><h4>Drawing hand</h4>
@@ -81,5 +85,7 @@ export class SettingsPanel {
         <div class="row"><button type="button" class="primary" data-act="reach">Calibrate reach</button>
         <button type="button" class="ghost" data-act="resetReach" ${s.region ? '' : 'disabled'}>Reset</button></div></section>
       <button type="button" class="done" data-act="close">Done</button>`;
+    this.el.querySelector('.head').insertAdjacentHTML('afterend', sectionNav(this.el));
+    this.el.scrollTop = top;
   }
 }

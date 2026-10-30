@@ -217,6 +217,7 @@ table.models .bar2 i { display: block; height: 100%; width: 0; background: var(-
 .viewnote { display: block; margin-top: 4px; color: var(--dim); font-size: 12px; }
 .labbody { flex: 1; min-width: 0; }
 @media (max-width: 900px) { .labrow { flex-direction: column; } .viewwrap { flex-basis: auto; width: 100%; position: static; } }
+table.models .net.here { color: var(--good); border-color: var(--good); }
 table.models .net { font-style: normal; font-size: 10.5px; color: var(--dim); border: 1px solid var(--line); border-radius: 999px; padding: 0 6px; margin-left: 4px; white-space: nowrap; }
 .modellab .row { margin: 10px 0 4px; }
 .modellab details { margin-top: 10px; color: var(--dim); font-size: 12.5px; } .modellab summary { cursor: pointer; } .modellab li { margin: 4px 0; }
@@ -318,3 +319,20 @@ button:disabled { cursor: not-allowed; }
 .btn:disabled { opacity: .38; filter: grayscale(.4); }
 .btn:disabled:hover { background: rgba(0, 0, 0, .04); border-color: transparent; }
 @media (max-width: 1100px) { .btn .k { display: none; } }
+
+/* --- scrolling you can see and use ------------------------------------------------------------ */
+.settings, .hullpanel, .demopanel, .modellab, .modal .pages, .tablewrap { scrollbar-width: auto; scrollbar-color: #9aa1ac #eceef1; }
+.settings::-webkit-scrollbar, .hullpanel::-webkit-scrollbar, .demopanel::-webkit-scrollbar, .modellab::-webkit-scrollbar, .modal .pages::-webkit-scrollbar, .tablewrap::-webkit-scrollbar { width: 14px; height: 14px; }
+.settings::-webkit-scrollbar-track, .hullpanel::-webkit-scrollbar-track, .demopanel::-webkit-scrollbar-track, .modellab::-webkit-scrollbar-track, .modal .pages::-webkit-scrollbar-track, .tablewrap::-webkit-scrollbar-track { background: #eceef1; border-radius: 8px; }
+.settings::-webkit-scrollbar-thumb, .hullpanel::-webkit-scrollbar-thumb, .demopanel::-webkit-scrollbar-thumb, .modellab::-webkit-scrollbar-thumb, .modal .pages::-webkit-scrollbar-thumb, .tablewrap::-webkit-scrollbar-thumb { background: #9aa1ac; border-radius: 8px; border: 3px solid #eceef1; }
+.settings .head, .hullpanel .head, .demopanel .head, .modellab .head { position: sticky; top: -12px; z-index: 3; margin: -12px -16px 6px; padding: 12px 16px 8px; background: var(--glass); border-bottom: 1px solid var(--line); }
+.sectnav { position: sticky; top: 32px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 0; background: var(--glass); border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+.sectnav button { padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: rgba(0, 0, 0, .04); font-size: 12px; }
+.sectnav button:hover, .sectnav button.hand-hover { background: rgba(20, 115, 230, .14); border-color: var(--accent); }
+.settings section { scroll-margin-top: 90px; }
+.scrollfab { position: fixed; z-index: 40; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; border-radius: 14px; box-shadow: 0 4px 16px rgba(0, 0, 0, .22); }
+.scrollfab[hidden] { display: none; }
+.scrollfab button { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: #fff; font-size: 16px; }
+.scrollfab button:hover:not(:disabled), .scrollfab button.hand-hover { background: rgba(20, 115, 230, .14); border-color: var(--accent); }
+.scrollfab button:disabled { opacity: .35; }
+.scrollfab .where { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
